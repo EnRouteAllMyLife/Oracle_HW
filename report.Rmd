@@ -1,0 +1,32 @@
+---
+title: "Untitled"
+author: "Qi Yumeng"
+date: "2024-03-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#
+```{r load packages}
+library(tidyverse)
+
+```
+
+```{r load data}
+df = read.delim("./Data/nhwsdata.txt") |>
+   mutate(across(c(DESEX,DBDX, DBTYPE, DBRX, DBIN), ~factor(.)))
+df |> skimr::skim()
+```
+
+```{r}
+numeric_features = c("BMI", "BP", "DEAGE","GH","MCS", "MH","PCS","PF", "RE","RP","RUHP6Q","SF")
+categorical_features =c("DESEX", "BP", "DEAGE")
+```
+
+```{r}
+ggplot(df, aes(RUHP6Q)) +geom_density() + facet_wrap(vars(DBDX))
+```
+```
