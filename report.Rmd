@@ -9,16 +9,17 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#
+# EDA
+
 ```{r load packages}
 library(tidyverse)
-
 ```
 
 ```{r load data}
 df = read.delim("./Data/nhwsdata.txt") |>
    mutate(across(c(DESEX,DBDX, DBTYPE, DBRX, DBIN), ~factor(.)))
 df |> skimr::skim()
+cat_list = c("DESEX","DBDX","DBIN","DBRX","DBTYPE")
 ```
 
 ```{r}
@@ -27,6 +28,18 @@ categorical_features =c("DESEX", "BP", "DEAGE")
 ```
 
 ```{r}
-ggplot(df, aes(RUHP6Q)) +geom_density() + facet_wrap(vars(DBDX))
+ggplot(df, aes(RUHP6Q)) +geom_histogram() + facet_wrap(vars(DBDX))
 ```
+```{r }
+df |>
+  count(DBDX, DBTYPE, DBIN, DBRX#,wt = RUHP6Q
+        ) |>
+  count_to_sunburst(fill_by_n = TRUE)
+```
+
+```{r}
+for (i in cat_list){
+  M = table(df[i],df['RUHP6Q'])
+  chisq.test()
+}
 ```
