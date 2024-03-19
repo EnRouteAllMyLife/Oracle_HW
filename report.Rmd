@@ -13,33 +13,102 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r load packages}
 library(tidyverse)
+library(plotme)
 ```
 
 ```{r load data}
-df = read.delim("./Data/nhwsdata.txt") |>
-   mutate(across(c(DESEX,DBDX, DBTYPE, DBRX, DBIN), ~factor(.)))
-df |> skimr::skim()
-cat_list = c("DESEX","DBDX","DBIN","DBRX","DBTYPE")
+df_raw = read.delim("./Data/nhwsdata.txt") #|>
+```
+
+DBDX	1=Diagnosed, 2=Not diagnosed, Missing = Not reporting diabetes
+DBTYPE	1=Type 1, 2=Type 2, 3=Unknown
+DBRX	1=Using an oral medication, 2=Not using an oral medication
+DBIN	1=Using an insulin, 2=Not using an insulin
+
+```{r}
+df = df_raw |>
+  # deal with nominal data
+  mutate(DBTYPE = if_else(is.na(DBTYPE), 0, DBTYPE),
+         DBRX = if_else(DBRX == 1, 1, 0),
+         DBIN = if_else(DBIN == 1, 1, 0)) |>
+  mutate(across(c(DESEX, DBDX,DBTYPE,DBRX,DBIN), ~factor(.))) |>
+  mutate(across(c(BP, GH, MH, PF, RE, RP,VT, SF,mmas), ~factor(., ordered = TRUE)))
+
+df_encode = df |>
+  mutate(DESEX = factor(DESEX, levels = c(1, 2), labels = c("Male", "Female")),
+         DBDX = factor(DBDX, levels = c(0, 1), labels = c("Not Diagnosed", "Diagnosed")),
+         DBTYPE = factor(DBTYPE, levels = c(0, 1, 2), labels = c("Not Diagnosed", "Type 1", "Type 2")),
+         DBRX = factor(DBRX, levels = c(0, 1), labels = c("Not Using Oral", "Using Oral")),
+         DBIN = factor(DBIN, levels = c(0, 1), labels = c("Not Using Insulin", "Using Insulin"))) 
+  
+  
+df |> skimr:: skim()
 ```
 
 ```{r}
-numeric_features = c("BMI", "BP", "DEAGE","GH","MCS", "MH","PCS","PF", "RE","RP","RUHP6Q","SF")
-categorical_features =c("DESEX", "BP", "DEAGE")
+# Detecting continuous and categorical variables
+continuous_vars <- c()
+categorical_vars <- c()
+
+for(col_name in names(df)) {
+  # Assuming continuous variables are of type numeric and have more unique values
+  if(is.numeric(df[[col_name]]) && length(unique(df[[col_name]])) > 10) { 
+    continuous_vars <- c(continuous_vars, col_name)
+  } else { 
+    categorical_vars <- c(categorical_vars, col_name)
+  }
+}
+continuous_vars = continuous_vars[-1]
 ```
 
-```{r}
-ggplot(df, aes(RUHP6Q)) +geom_histogram() + facet_wrap(vars(DBDX))
-```
-```{r }
-df |>
+
+```{r, relationship of disease, type, oral and insulin use}
+df_encode |>
   count(DBDX, DBTYPE, DBIN, DBRX#,wt = RUHP6Q
         ) |>
   count_to_sunburst(fill_by_n = TRUE)
 ```
 
+```{r implement}
+df |> filter(!is.na(BMI)) |> group_by(DBDX) |> summarise(mean(BMI))
+
+df = df |>
+  mutate(BMI = if_else(is.na(BMI) & DBDX == 0,27.95397,
+                       if_else(is.na(BMI) & DBDX == 1, 33.21504,BMI)))
+df_encode = df_encode |>
+  mutate(BMI = if_else(is.na(BMI) & DBDX == 0,27.95397,
+                       if_else(is.na(BMI) & DBDX == 1, 33.21504,BMI)))
+ggplot(df_encode, aes(x = BMI,col = DBDX)) +geom_density()
+```
+
+```{r categorical univarite}
+cat_result = tibble(
+  vars = categorical_vars) |>
+  filter(!(vars %in% c("DBRX","DBIN","DBDX","DBTYPE","mmas"))) |> # filter these out for 0 values
+  mutate(summary = map(vars, \(x) chisq.test(df[[x]], df[['DBDX']])),
+         summary = map(summary, broom::tidy ))|>
+  unnest(summary) |>
+  select(vars,statistic,p.value) |>
+  mutate(if_sig = if_else(p.value < 0.05,1,0))
+cat_result
+```
+
+
+
+```{r continuous univarite}
+con_result = tibble(
+  vars = continuous_vars) |>
+  #filter(!(vars %in% c("zKey"))) |> # filter these out for 0 values
+  mutate(#x = df|>filter(DBDX == 0) |> select(vars))
+         summary = map(vars, \(x) wilcox.test(df|>filter(DBDX == 0) |> select(x) |> pull(),
+                                              df|>filter(DBDX == 1) |> select(x) |> pull())),
+         summary = map(summary, broom::tidy ))|>
+  unnest(summary) |>
+  select(vars,statistic,p.value) |>
+  mutate(if_sig = if_else(p.value < 0.05,1,0))
+con_result
+```
+
 ```{r}
-for (i in cat_list){
-  M = table(df[i],df['RUHP6Q'])
-  chisq.test()
-}
+corrplot::corrplot(cor(df |> select(any_of(continuous_vars))), "number")
 ```

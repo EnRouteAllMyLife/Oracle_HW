@@ -32,3 +32,9 @@ df |>
   count(DBDX, DBTYPE, DBIN, DBRX#,wt = RUHP6Q
         ) |>
   count_to_sunburst(fill_by_n = TRUE)
+
+
+boxplot(Ozone ~ Month, data = airquality)
+wilcox.test(Ozone ~ Month, data = airquality,
+            subset = Month %in% c(5, 8))
+
