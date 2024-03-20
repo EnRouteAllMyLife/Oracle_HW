@@ -10,14 +10,13 @@
 
 
 
-<meta name="date" content="2024-03-16" />
 
 <title>Report</title>
 
 <script src="site_libs/header-attrs-2.25/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<link href="site_libs/bootstrap-3.3.5/css/journal.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
@@ -30,7 +29,11 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <script src="site_libs/htmlwidgets-1.6.2/htmlwidgets.js"></script>
@@ -68,6 +71,7 @@ if (window.hljs) {
 
 
 
+<link rel="stylesheet" href="style.css" type="text/css" />
 
 
 
@@ -226,7 +230,73 @@ $(document).ready(function () {
 </style>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
 
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
 
 
 
@@ -236,6 +306,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -279,22 +359,29 @@ $(document).ready(function () {
 
 <div id="header">
 
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
 
 
 <h1 class="title toc-ignore">Report</h1>
-<h4 class="date">2024-03-16</h4>
 
 </div>
 
 
 <pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+<pre><code>## ── Attaching core tidyverse packages ───────────────────────── tidyverse 2.0.0 ──
 ## ✔ dplyr     1.1.3     ✔ readr     2.1.4
 ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
 ## ✔ ggplot2   3.4.4     ✔ tibble    3.2.1
 ## ✔ lubridate 1.9.3     ✔ tidyr     1.3.0
 ## ✔ purrr     1.0.2     
-## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ─────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
 ## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
@@ -666,8 +753,8 @@ continuous_vars = continuous_vars[-1]</code></pre>
   count(DBDX, DBTYPE, DBIN, DBRX#,wt = RUHP6Q
         ) |&gt;
   count_to_sunburst(fill_by_n = TRUE)</code></pre>
-<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-92000ece5e39c76d8272" style="width:1152px;height:672px;"></div>
-<script type="application/json" data-for="htmlwidget-92000ece5e39c76d8272">{"x":{"visdat":{"1404b8cf70f3":["function () ","plotlyVisDat"]},"cur_data":"1404b8cf70f3","attrs":{"1404b8cf70f3":{"ids":["Diagnosed","Not Diagnosed","Diagnosed.->.Type 1","Diagnosed.->.Type 2","Not Diagnosed.->.Not Diagnosed","Diagnosed.->.Type 1.->.Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Using Insulin","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin","Diagnosed.->.Type 1.->.Using Insulin.->.Using Oral","Diagnosed.->.Type 2.->.Not Using Insulin.->.Not Using Oral","Diagnosed.->.Type 2.->.Not Using Insulin.->.Using Oral","Diagnosed.->.Type 2.->.Using Insulin.->.Using Oral","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin.->.Not Using Oral"],"parents":["","","Diagnosed","Diagnosed","Not Diagnosed","Diagnosed.->.Type 1","Diagnosed.->.Type 2","Diagnosed.->.Type 2","Not Diagnosed.->.Not Diagnosed","Diagnosed.->.Type 1.->.Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Using Insulin","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin"],"labels":["Diagnosed","Not Diagnosed","Type 1","Type 2","Not Diagnosed","Using Insulin","Not Using Insulin","Using Insulin","Not Using Insulin","Using Oral","Not Using Oral","Using Oral","Using Oral","Not Using Oral"],"values":[8345,66655,517,7828,66655,517,6048,1780,66655,517,1065,4983,1780,66655],"hovertext":["column: DBDX<br />value: Diagnosed<br />n: 8345","column: DBDX<br />value: Not Diagnosed<br />n: 66655","column: DBTYPE<br />value: Type 1<br />n: 517","column: DBTYPE<br />value: Type 2<br />n: 7828","column: DBTYPE<br />value: Not Diagnosed<br />n: 66655","column: DBIN<br />value: Using Insulin<br />n: 517","column: DBIN<br />value: Not Using Insulin<br />n: 6048","column: DBIN<br />value: Using Insulin<br />n: 1780","column: DBIN<br />value: Not Using Insulin<br />n: 66655","column: DBRX<br />value: Using Oral<br />n: 517","column: DBRX<br />value: Not Using Oral<br />n: 1065","column: DBRX<br />value: Using Oral<br />n: 4983","column: DBRX<br />value: Using Oral<br />n: 1780","column: DBRX<br />value: Not Using Oral<br />n: 66655"],"sort":[false,false,false,false,false,false,false,false,false,false,false,false,false,false],"marker":{"colorbar":{"bgcolor":""},"colorbar.1":{"bgcolor":""},"colorbar.2":{"bgcolor":""},"colorbar.3":{"bgcolor":""},"colorbar.4":{"bgcolor":""},"colorbar.5":{"bgcolor":""},"colorbar.6":{"bgcolor":""},"colorbar.7":{"bgcolor":""},"colorbar.8":{"bgcolor":""},"colorbar.9":{"bgcolor":""},"colorbar.10":{"bgcolor":""},"colorbar.11":{"bgcolor":""},"colorbar.12":{"bgcolor":""},"colorbar.13":{"bgcolor":""}},"branchvalues":"total","hoverinfo":"text","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"sunburst"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"ids":["Diagnosed","Not Diagnosed","Diagnosed.->.Type 1","Diagnosed.->.Type 2","Not Diagnosed.->.Not Diagnosed","Diagnosed.->.Type 1.->.Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Using Insulin","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin","Diagnosed.->.Type 1.->.Using Insulin.->.Using Oral","Diagnosed.->.Type 2.->.Not Using Insulin.->.Not Using Oral","Diagnosed.->.Type 2.->.Not Using Insulin.->.Using Oral","Diagnosed.->.Type 2.->.Using Insulin.->.Using Oral","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin.->.Not Using Oral"],"parents":["","","Diagnosed","Diagnosed","Not Diagnosed","Diagnosed.->.Type 1","Diagnosed.->.Type 2","Diagnosed.->.Type 2","Not Diagnosed.->.Not Diagnosed","Diagnosed.->.Type 1.->.Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Using Insulin","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin"],"labels":["Diagnosed","Not Diagnosed","Type 1","Type 2","Not Diagnosed","Using Insulin","Not Using Insulin","Using Insulin","Not Using Insulin","Using Oral","Not Using Oral","Using Oral","Using Oral","Not Using Oral"],"values":[8345,66655,517,7828,66655,517,6048,1780,66655,517,1065,4983,1780,66655],"hovertext":["column: DBDX<br />value: Diagnosed<br />n: 8345","column: DBDX<br />value: Not Diagnosed<br />n: 66655","column: DBTYPE<br />value: Type 1<br />n: 517","column: DBTYPE<br />value: Type 2<br />n: 7828","column: DBTYPE<br />value: Not Diagnosed<br />n: 66655","column: DBIN<br />value: Using Insulin<br />n: 517","column: DBIN<br />value: Not Using Insulin<br />n: 6048","column: DBIN<br />value: Using Insulin<br />n: 1780","column: DBIN<br />value: Not Using Insulin<br />n: 66655","column: DBRX<br />value: Using Oral<br />n: 517","column: DBRX<br />value: Not Using Oral<br />n: 1065","column: DBRX<br />value: Using Oral<br />n: 4983","column: DBRX<br />value: Using Oral<br />n: 1780","column: DBRX<br />value: Not Using Oral<br />n: 66655"],"sort":false,"marker":{"color":"rgba(31,119,180,1)","colorbar":{"bgcolor":""},"line":{"color":"rgba(255,255,255,1)"}},"branchvalues":"total","hoverinfo":["text","text","text","text","text","text","text","text","text","text","text","text","text","text"],"type":"sunburst","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-3e75c1a117632ef2fafd" style="width:1152px;height:672px;"></div>
+<script type="application/json" data-for="htmlwidget-3e75c1a117632ef2fafd">{"x":{"visdat":{"143ebd5190e1":["function () ","plotlyVisDat"]},"cur_data":"143ebd5190e1","attrs":{"143ebd5190e1":{"ids":["Diagnosed","Not Diagnosed","Diagnosed.->.Type 1","Diagnosed.->.Type 2","Not Diagnosed.->.Not Diagnosed","Diagnosed.->.Type 1.->.Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Using Insulin","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin","Diagnosed.->.Type 1.->.Using Insulin.->.Using Oral","Diagnosed.->.Type 2.->.Not Using Insulin.->.Not Using Oral","Diagnosed.->.Type 2.->.Not Using Insulin.->.Using Oral","Diagnosed.->.Type 2.->.Using Insulin.->.Using Oral","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin.->.Not Using Oral"],"parents":["","","Diagnosed","Diagnosed","Not Diagnosed","Diagnosed.->.Type 1","Diagnosed.->.Type 2","Diagnosed.->.Type 2","Not Diagnosed.->.Not Diagnosed","Diagnosed.->.Type 1.->.Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Using Insulin","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin"],"labels":["Diagnosed","Not Diagnosed","Type 1","Type 2","Not Diagnosed","Using Insulin","Not Using Insulin","Using Insulin","Not Using Insulin","Using Oral","Not Using Oral","Using Oral","Using Oral","Not Using Oral"],"values":[8345,66655,517,7828,66655,517,6048,1780,66655,517,1065,4983,1780,66655],"hovertext":["column: DBDX<br />value: Diagnosed<br />n: 8345","column: DBDX<br />value: Not Diagnosed<br />n: 66655","column: DBTYPE<br />value: Type 1<br />n: 517","column: DBTYPE<br />value: Type 2<br />n: 7828","column: DBTYPE<br />value: Not Diagnosed<br />n: 66655","column: DBIN<br />value: Using Insulin<br />n: 517","column: DBIN<br />value: Not Using Insulin<br />n: 6048","column: DBIN<br />value: Using Insulin<br />n: 1780","column: DBIN<br />value: Not Using Insulin<br />n: 66655","column: DBRX<br />value: Using Oral<br />n: 517","column: DBRX<br />value: Not Using Oral<br />n: 1065","column: DBRX<br />value: Using Oral<br />n: 4983","column: DBRX<br />value: Using Oral<br />n: 1780","column: DBRX<br />value: Not Using Oral<br />n: 66655"],"sort":[false,false,false,false,false,false,false,false,false,false,false,false,false,false],"marker":{"colorbar":{"bgcolor":""},"colorbar.1":{"bgcolor":""},"colorbar.2":{"bgcolor":""},"colorbar.3":{"bgcolor":""},"colorbar.4":{"bgcolor":""},"colorbar.5":{"bgcolor":""},"colorbar.6":{"bgcolor":""},"colorbar.7":{"bgcolor":""},"colorbar.8":{"bgcolor":""},"colorbar.9":{"bgcolor":""},"colorbar.10":{"bgcolor":""},"colorbar.11":{"bgcolor":""},"colorbar.12":{"bgcolor":""},"colorbar.13":{"bgcolor":""}},"branchvalues":"total","hoverinfo":"text","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"sunburst"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"ids":["Diagnosed","Not Diagnosed","Diagnosed.->.Type 1","Diagnosed.->.Type 2","Not Diagnosed.->.Not Diagnosed","Diagnosed.->.Type 1.->.Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Using Insulin","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin","Diagnosed.->.Type 1.->.Using Insulin.->.Using Oral","Diagnosed.->.Type 2.->.Not Using Insulin.->.Not Using Oral","Diagnosed.->.Type 2.->.Not Using Insulin.->.Using Oral","Diagnosed.->.Type 2.->.Using Insulin.->.Using Oral","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin.->.Not Using Oral"],"parents":["","","Diagnosed","Diagnosed","Not Diagnosed","Diagnosed.->.Type 1","Diagnosed.->.Type 2","Diagnosed.->.Type 2","Not Diagnosed.->.Not Diagnosed","Diagnosed.->.Type 1.->.Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Not Using Insulin","Diagnosed.->.Type 2.->.Using Insulin","Not Diagnosed.->.Not Diagnosed.->.Not Using Insulin"],"labels":["Diagnosed","Not Diagnosed","Type 1","Type 2","Not Diagnosed","Using Insulin","Not Using Insulin","Using Insulin","Not Using Insulin","Using Oral","Not Using Oral","Using Oral","Using Oral","Not Using Oral"],"values":[8345,66655,517,7828,66655,517,6048,1780,66655,517,1065,4983,1780,66655],"hovertext":["column: DBDX<br />value: Diagnosed<br />n: 8345","column: DBDX<br />value: Not Diagnosed<br />n: 66655","column: DBTYPE<br />value: Type 1<br />n: 517","column: DBTYPE<br />value: Type 2<br />n: 7828","column: DBTYPE<br />value: Not Diagnosed<br />n: 66655","column: DBIN<br />value: Using Insulin<br />n: 517","column: DBIN<br />value: Not Using Insulin<br />n: 6048","column: DBIN<br />value: Using Insulin<br />n: 1780","column: DBIN<br />value: Not Using Insulin<br />n: 66655","column: DBRX<br />value: Using Oral<br />n: 517","column: DBRX<br />value: Not Using Oral<br />n: 1065","column: DBRX<br />value: Using Oral<br />n: 4983","column: DBRX<br />value: Using Oral<br />n: 1780","column: DBRX<br />value: Not Using Oral<br />n: 66655"],"sort":false,"marker":{"color":"rgba(31,119,180,1)","colorbar":{"bgcolor":""},"line":{"color":"rgba(255,255,255,1)"}},"branchvalues":"total","hoverinfo":["text","text","text","text","text","text","text","text","text","text","text","text","text","text"],"type":"sunburst","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
 <div id="implement" class="section level2">
 <h2>Implement</h2>
 <pre class="r"><code>df |&gt; filter(!is.na(BMI)) |&gt; group_by(DBDX) |&gt; summarise(mean(BMI))</code></pre>
@@ -769,6 +856,8 @@ best_model &lt;- glmnet(x_matrix, y_vector, standardize=TRUE,
 
 
 
+</div>
+</div>
 
 </div>
 
@@ -800,7 +889,41 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
 
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
