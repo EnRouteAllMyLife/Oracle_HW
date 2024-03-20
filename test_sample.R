@@ -37,4 +37,18 @@ df |>
 boxplot(Ozone ~ Month, data = airquality)
 wilcox.test(Ozone ~ Month, data = airquality,
             subset = Month %in% c(5, 8))
+# 加载tidyverse包，主要用于数据处理
+library(tidyverse)
 
+# 创建一个包含有序变量的数据框
+df <- tibble(
+  ord_var = factor(c("Low", "Medium", "High", "Medium", "Low"), levels = c("Low", "Medium", "High"), ordered = TRUE)
+)
+
+# 查看数据框
+print(df)
+# 创建模型矩阵
+mat <- model.matrix(~ ord_var, data = df)
+
+# 查看结果
+print(mat)

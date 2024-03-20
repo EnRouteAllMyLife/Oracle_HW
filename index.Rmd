@@ -1,0 +1,24 @@
+---
+title: "Welcome!"
+output: 
+  html_document:
+    toc_float: true
+---
+
+Hi, I'm Ada, currently a first-year MS student in Biostatistics at Columbia University.
+
+I'm an [INFJ](https://www.16personalities.com/infj-personality) and also a [Scorpio](https://www.zodiacsign.com/zodiac-signs/scorpio/).
+
+
+
+This year, I really wanna go to Mexico and visit [Museo Frida Kahlo](https://www.museofridakahlo.org.mx/?lang=en). 
+
+Currently obsessed with Notion. I'm totally in the "Give a man a hammer & everything becomes a nail" state-of-mind.
+
+Craving cuddles with furry friends. A cat lover and dogs are absolutely adorable, it just sometimes I might shed away from their boundless energy.
+
+<div style="text-align: center;">
+  <img src="Graphs/the_world_fascinates_me.jpeg" style="width: 70%;">
+</div>
+
+
