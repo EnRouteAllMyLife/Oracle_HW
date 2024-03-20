@@ -8,17 +8,23 @@ output:
     code_folding: "hide"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+```{r setup}
+library(tidyverse)
+library(readr)
+library(plotme)
+library(glmnet)
+knitr::opts_chunk$set(
+  warning = FALSE, 
+  message = FALSE,
+  fig.dim = c(12, 7))
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
 ```
+
 
 # EDA
 
-```{r load packages}
-library(tidyverse)
-library(plotme)
-library(glmnet)
-```
 
 ```{r load data}
 df_raw = read.delim("./Data/nhwsdata.txt") 

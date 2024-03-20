@@ -1,0 +1,83 @@
+---
+title: "About"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+---
+
+# Education Background
+
+* 2023 ~ 2025, Master of Science in Biostatistics, Mailman School of Public Health, Columbia University
+
+* 2018 ~ 2022, Bachelor of Science in Statistics, School of Statistic, East China Normal University
+
+
+# Research Experience
+
+Since August 2022, I have been engaged in a remote role as a Statistical Analyst, contributing my expertise to two distinct research teams. I actively participate in the entire lifecycle of research projects, which includes designing study methodologies, selecting appropriate statistical techniques, and interpreting complex data sets. 
+
+## Parkinson Disease
+
+The research team, led by Professor [Ying Chang](https://www.haodf.com/doctor/238861/xinxi-jieshao.html) from the Department of Neurology at China-Japan Union Hospital, has major interest in [Parkinson Disease (PD)](https://my.clevelandclinic.org/health/diseases/8525-parkinsons-disease-an-overview). From August 2022, I have taken responsibilities in  experimental design, data processing, statistical analysis and visualization. 
+
+As of `r format(Sys.Date(), '%Y-%m-%d')`, the team has achieved significant advancements in researching the risk factors associated with non-motor symptoms in patients with PD. We have diligently worked to verify and quantify the relationships between various factors and the occurrence of specific symptoms, like apathy and [impulse control disorder](https://my.clevelandclinic.org/health/diseases/25175-impulse-control-disorders) . Ultimately, our efforts have culminated in the development of a predictive model to forecast the onset of these symptoms in PD patients.
+
+## Bone and Joint Surgery
+
+The research team, spearheaded by Professor [Xin Qi](https://m.haodf.com/doctor/78526.html) from the Department of Bone and Joint Surgery at the First Hospital of Jilin University, has made significant advancements in their field. Detailed demonstration of their results can be found on this [websit](http://api.cup-placement.com/) (a little shabby, still working on that). From September 2023, I have shoulder the majority of the analytical and coding responsibilities, including data management, processing, modeling, visualization and website construction.
+
+So far by `r format(Sys.Date(), '%Y-%m-%d')`, the team has achieved notable progress in the following areas:
+
+### Total Hip Arthroplasty on Pelvic Mobility
+
+This is a prospective cohort study focusing on the impacts of total hip [arthroplasty](https://www.hopkinsmedicine.org/health/treatment-tests-and-therapies/arthroplasty) on pelvic mobility. The study centers are The First Hospital of Jilin University and The Sixth Hospital of Xinjiang Medical University. The primary objectives of this study are threefold:
+
+* To study changes of pelvic mobility after hip arthroplasty and associated influencing factors in patients with different diagnosis.
+
+* To establish a prediction model for pelvic stiffness remission after hip replacement in patients with DDH.
+
+* To establish a method to screen patients with possible abnormal pelvic mobility based on routine preoperative examinations.
+
+
+### Coronal Plane Alignment of the Knee Classification 
+
+This is a retrospective cohort study focusing on the distribution of coronal plane alignment of the knee (CPAK) classification among the [osteoarthritis](https://www.hopkinsmedicine.org/health/conditions-and-diseases/arthritis/osteoarthritis) and the healthy population. Particularly focusing on Chinese population, the primary objectives of this study are threefold:
+
+* To investigate the distribution of CPAK within the Chinese population; to determine if it aligns with previous study.
+
+* To study the impact of OA progression on CPAK classification changes
+
+* To establish a machine learning algorithm for predicting the phenotypic structure of osteoarthritic knee joints. 
+
+
+# Publication
+
+* Ren W, Qi Y, Liu Y, et al. Evaluation of risk factors for impulse control disorder in Parkinson's disease in northern China[J]. Frontiers in Aging Neuroscience, 15: 1257618.
+
+*	Luo R, Qi Y, He J, et al. Analysis of Influencing Factors of Apathy in Patients with Parkinson’s Disease[J]. Brain Sciences, 2022, 12(10): 1343.
+
+
+# Work Experience
+
+## Shanghai Chengce Fin-tech
+
+From February 2022 to September 2023, I have worked as a credit risk analyst. I feel incredibly fortunate for the growth and experiences I've gained in this supportive company. 
+
+I'm in charge of the credit risk analysis over [PinjamDuit](https://www.stanfordtek.com), one of Indonesia’s leading digital lending platforms that is licensed, registered, and supervised by the Financial Services Authority (OJK). The frequently used programming language is Python, SQL and R. Overall, my prime duty can be divided into three parts:
+
+* Feature engineering and scorecard iteration: analyzed customers’ history behavior and multi-platform loan data; generated a 500-feature list with time-based segmentation. Developed a LGBM scorecard based on the list; enhanced predictive accuracy with an AUC of 0.7 and KS of 0.24 on OOT data. Effectively optimized risk exposure, reducing bad debt proportion by 1.5%.
+
+* Anti-fraud optimization: identified and analyzed suspected fraud cases and scam patterns; mitigated risks associated with scam rings and click farming, enhancing organizational security and integrity.
+
+* Daily monitoring: conducted daily reviews and made decisions for all incoming applications in the pipeline product based on available internal SOP
+
+
+## Acxiom Information Service
+
+I have interned as a Delivery Analyst from July 2021 to December 2021. The team, based in Shanghai, provided CRM for L'oreal Paris. The most remarkable contributions are listed as:
+
+* Membership loyalty analysis: analyzed the reasons for the low repurchase rate of R3 young consumers by comparing the loss rate and retention rate of competing products; identified the long-term trend of weak brand stickiness (infidelity) of young consumers; collaborated with the operation team with customized strategies.
+
+* D11 CRM Planning: participated in the CRM planning for Double 11 Shopping Carnival, trained a clustering model based on users’ past purchasing behavior, mind and consumption habits and divided users into nine groups; contributed my parts to reaching 2.45 billion GMV, an increase of 21% over the same period of the previous year

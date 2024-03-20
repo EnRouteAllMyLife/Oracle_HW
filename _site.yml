@@ -1,10 +1,11 @@
 name: "Oracle Summer Intern HW"
 output_dir: "."
 navbar:
-  title: "Oracle"
+  title: "Home"
   left:
-    - text: "Home"
-      href: index.html
+    - text: "About"
+      href: about.html
+  right:
     - text: "Report"
       href: report.html
     - icon: fa-envelope fa-lg
