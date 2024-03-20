@@ -1,7 +1,7 @@
-name: "Ada-website"
+name: "Oracle Summer Intern HW"
 output_dir: "."
 navbar:
-  title: "All about Ada"
+  title: "Oracle"
   left:
     - text: "Home"
       href: index.html

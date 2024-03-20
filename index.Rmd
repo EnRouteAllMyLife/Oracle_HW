@@ -5,7 +5,7 @@ output:
     toc_float: true
 ---
 
-Hi, I'm Ada, currently a first-year MS student in Biostatistics at Columbia University.
+Hi, I'm Ada (Yumeng Qi), currently a first-year MS student in Biostatistics at Columbia University.
 
 
 <div style="text-align: center;">
