@@ -1,6 +1,8 @@
 ---
 title: "Report"
-output: 
+output:
+  pdf_document:
+    toc: true
   html_document:
     code_folding: hide
     always_allow_html: true
@@ -31,7 +33,7 @@ The classification within the `DBDX` disease factor, grouping 'Not diagnosed' an
 We observed that a series of variables related to diabetes diagnosis, type, and medication show missing values. Given that `DBDX`, annotated as 'Not diagnosed, Missing = Not reporting diabetes,' is categorized into am single group, it is logical to treat missing values in variables directly influenced by `DBDX` (such as `DBTYPE`, `DBRX`, and `DBIN`) as 0.
 
 
-We observed that `MMAS` is also related to the diagnosis of diabetes, only people who were diagnosed had records; Since it is ordinal data, we opted to fill its missing values with -1 to preserve the original meaning without distortion. Regarding missing values, only `BMI` has them, which we will address in a later discussion on handling such cases.
+We observed that `MMAS` is also related to the diagnosis of diabetes, only people who were diagnosed had records; Since it is ordinal data, we opted to fill its missing values with -1 to preserve the original meaning without distortion. As for `BMI` given the missing rate is relatively small and sample size is large enough, we implemented the missing value with the mean.
 
 ```{r load package and data}
 library(tidyverse)
@@ -108,6 +110,8 @@ We created a series of plots to compare the distribution of variables between th
 
 ### Demographic
 
+We observed that demographic variables exhibit greater differences between the diagnosed and non-diagnosed groups compared to the hospitalized and non-hospitalized groups. This raises concerns that these demographic factors may act as confounding variables in our analysis.
+
 ```{r start over with data pre processing}
 
 # delete zKey
@@ -118,7 +122,8 @@ df = df_raw |>
   mutate(DBTYPE = if_else(is.na(DBTYPE), 0, DBTYPE),
          DBRX = if_else(DBRX == 1, 1, 0, missing = 0),
          DBIN = if_else(DBIN == 1, 1, 0, missing = 0),
-         MMAS = if_else(is.na(MMAS),-1,MMAS)) |>
+         MMAS = if_else(is.na(MMAS),-1,MMAS),
+         BMI = if_else(is.na(BMI), mean(df_raw$BMI, na.rm = TRUE), BMI)) |>
   mutate(across(c(DESEX, DBDX,DBTYPE,DBRX,DBIN), ~factor(.))) |>
   mutate(across(c(BP, GH,  PF, VT, SF,MMAS), ~factor(.))) |>
   mutate(IFHOS = if_else(RUHP6Q >0,1,0))
@@ -128,7 +133,8 @@ df = df_raw |>
 df_encode = df |>
   mutate(DBMed= if_else(DBRX == 1 & DBIN == 1, "Oral & Insulin",
                         if_else(DBRX == 1 & DBIN == 0, "Oral only",
-                               if_else(DBRX == 0 & DBIN == 1, "Insulin only","None")))) |>
+                               if_else(DBRX == 0 & DBIN == 1, "Insulin only","None"))),
+         BMI = if_else(is.na(BMI), mean(df_raw$BMI, na.rm = TRUE), BMI))|>
   mutate(DESEX = factor(DESEX, levels = c(1, 2), labels = c("Male", "Female")),
          DBDX = factor(DBDX, levels = c(0, 1), labels = c("Not Diagnosed", "Diagnosed")),
          DBTYPE = factor(DBTYPE, levels = c(0, 1, 2), labels = c("Not Diagnosed", "Type 1", "Type 2")),
@@ -142,43 +148,26 @@ p3 = ggplot(df_encode , aes(x = DESEX,fill = DBDX)) +geom_bar()
 
 subplot(ggplotly(p1),ggplotly(p2), ggplotly(p3),nrows = 1)
 
-df |> filter(!is.na(BMI)) |> group_by(DBDX) |> summarise(mean(BMI))
 
-df = df |>
-  mutate(BMI = if_else(is.na(BMI) & DBDX == 0,27.95397,
-                       if_else(is.na(BMI) & DBDX == 1, 33.21504,BMI)),
-         MMAS = as.numeric(as.character(MMAS)),
-         MMAS = if_else(is.na(MMAS),-1,MMAS))
-df_encode = df_encode |>
-  
-  mutate(BMI = if_else(is.na(BMI) & DBDX == 0,27.95397,
-                       if_else(is.na(BMI) & DBDX == 1, 33.21504,BMI)),
-         MMAS = as.numeric(as.character(MMAS)),
-         MMAS = if_else(is.na(MMAS),-1,MMAS))
+p1 = ggplot(df_encode |> filter(!is.na(BMI)), aes(x = BMI,col = factor(IFHOS))) +geom_density()
+p2 = ggplot(df_encode , aes(x = DEAGE,col = factor(IFHOS))) +geom_density()
+p3 = ggplot(df_encode , aes(x = DESEX,fill = factor(IFHOS))) +geom_bar()
 
 
-ggplot(df_encode , aes(x = DEAGE,y = RUHP6Q)) +geom_point()+geom_smooth()
-
+subplot(ggplotly(p1),ggplotly(p2), ggplotly(p3),nrows = 1)
 ```
 
 
 ### Diabetes
-Series of variables related to the diagnose, type, medication regarding diabetes.
+
+A series of variables pertaining to the diagnosis, type, and medication related to diabetes were listed in the dataset. Approximately 11.1% of the population was diagnosed with diabetes, of which only 6% were classified as Type 1. Regarding medication, all Type 1 patients were found to use both oral medications and insulin. For Type 2 diabetes, three medication combinations were identified: 1) those who used both oral medications and insulin, 2) those who used oral medications only, and 3) those who did not use either oral medications or insulin. The proportions of each category can be visualized in the following chart.
 
 ```{r, relationship of disease, type, oral and insulin use}
-p1 = df_encode |>
-  count(DBDX, DBTYPE, DBIN, DBRX,wt = RUHP6Q
+df_encode |>
+  count(DBDX, DBTYPE, DBIN, DBRX#,wt = RUHP6Q
         ) |>
   count_to_sunburst(fill_by_n = TRUE)
 
-p2 = df_encode |> 
-  filter(DBDX == "Diagnosed") |>
-  filter(RUHP6Q >0) |>
- # mutate(neighbourhood = fct_reorder(neighbourhood, price)) |> 
-  plot_ly(y = ~RUHP6Q, color = ~DBMed, type = "box", colors = "viridis")
-
-p1
-p2
 ```
 
 
@@ -254,7 +243,7 @@ As the Negative Binomial regression model suggested, diagnosed individuals have 
 
 **Does Type 1 Diabetes patients have better medication adherence score?**
 
-We exclusively considered patients with confirmed diagnoses and employed a chi-square test to investigate potential disparities in the distribution of Morisky Medication Adherence Scores (MMAS) between individuals with type 1 and type 2 diabetes. The analysis revealed statistically significant differences in MMAS distribution between type 1 and type 2 diabetes patients (see the results provided). With a significance level set at 0.05, the findings indicate notable discrepancies in MMAS distribution among the two diabetic subgroups."
+We exclusively considered patients with confirmed diagnoses and employed a chi-square test to investigate potential disparities in the distribution of Morisky Medication Adherence Scores (`MMAS`) between individuals with type 1 and type 2 diabetes. The analysis revealed statistically significant differences in `MMAS` distribution between type 1 and type 2 diabetes patients (see the results provided). With a significance level set at 0.05, the findings indicate notable discrepancies in `MMAS` distribution among the two diabetic subgroups."
 
 ```{r Q2 chisq}
 df_db= df |> filter(DBTYPE!="0") 
@@ -265,6 +254,7 @@ The bar plot and pie charts further illustrate the difference.
 
 ```{r Q2 plot}
 df_summary = df_encode |> filter(DBTYPE !=0) |> group_by(DBTYPE) |> 
+  mutate(MMAS = as.numeric(MMAS)) |>
   summarise(mean = round(mean(MMAS), 4),
             sd = round(sd(MMAS),4))
 
