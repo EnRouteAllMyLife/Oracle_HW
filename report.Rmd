@@ -11,74 +11,137 @@ output:
 
 
 ```{r setup}
-library(tidyverse)
-library(readr)
-library(plotme)
-library(glmnet)
 knitr::opts_chunk$set(
+  collapse = TRUE, 
   warning = FALSE, 
   message = FALSE,
-  fig.dim = c(12, 7))
-
-theme_set(theme_minimal() + theme(legend.position = "bottom"))
+  fig.dim = c(8, 4),
+  fig.format = "png")
 ```
 
 
 # EDA
 
+## Descriptive Analysis{.tabset}
 
-```{r load data}
+First, we loaded the dataset and assigned variable types according to the codebook, identifying 11 factors—6 of which are ordinal—and 11 numeric variables, each with more than five unique values. Below, we detail the descriptive analysis.
+
+The classification within the `DBDX` disease factor, grouping 'Not diagnosed' and 'Not reporting diabetes' together, raises a concern. It suggests the potential oversight of individuals who may have diabetes but remain undiagnosed, inadvertently categorizing them outside the diagnosed group.For this study, our data primarily concentrate on life quality scores rather than genetic or other predictors that could lead to diabetes. Consequently, we have simplified our approach by not distinguishing between undiagnosed diabetes patients and those who have not reported the condition. This simplification have made the following implementations much easier. 
+
+We observed that a series of variables related to diabetes diagnosis, type, and medication show missing values. Given that `DBDX`, annotated as 'Not diagnosed, Missing = Not reporting diabetes,' is categorized into am single group, it is logical to treat missing values in variables directly influenced by `DBDX` (such as `DBTYPE`, `DBRX`, and `DBIN`) as 0.
+
+
+We observed that `MMAS` is also related to the diagnosis of diabetes, only people who were diagnosed had records; Since it is ordinal data, we opted to fill its missing values with -1 to preserve the original meaning without distortion. Regarding missing values, only `BMI` has them, which we will address in a later discussion on handling such cases.
+
+```{r load package and data}
+library(tidyverse)
+library(readr)
+library(plotme)
+library(glmnet)
+library(plotly)
+library(kableExtra)
+library(mpath)
+library(zip)
+library(pscl)
+library(MatchIt)
+theme_set(theme_bw() + theme(legend.position = "bottom"))
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+
 df_raw = read.delim("./Data/nhwsdata.txt") 
-```
 
-
-
-```{r}
 df = df_raw |>
   # deal with nominal data
-  mutate(DBTYPE = if_else(is.na(DBTYPE), 0, DBTYPE),
-         DBRX = if_else(DBRX == 1, 1, 0, missing = 0),
-         DBIN = if_else(DBIN == 1, 1, 0, missing = 0)) |>
   mutate(across(c(DESEX, DBDX,DBTYPE,DBRX,DBIN), ~factor(.))) |>
- # mutate(across(c(BP, GH, MH, PF, RE, RP,VT, SF,MMAS), ~factor(., ordered = TRUE))) |>
-  mutate(across(c(BP, GH, MH, PF, RE, RP,VT, SF,MMAS), ~factor(.))) 
-df_encode = df |>
-  mutate(DESEX = factor(DESEX, levels = c(1, 2), labels = c("Male", "Female")),
-         DBDX = factor(DBDX, levels = c(0, 1), labels = c("Not Diagnosed", "Diagnosed")),
-         DBTYPE = factor(DBTYPE, levels = c(0, 1, 2), labels = c("Not Diagnosed", "Type 1", "Type 2")),
-         DBRX = factor(DBRX, levels = c(0, 1), labels = c("Not Using Oral", "Using Oral")),
-         DBIN = factor(DBIN, levels = c(0, 1), labels = c("Not Using Insulin", "Using Insulin"))) 
-  
-  
-df |> skimr:: skim()
-```
+  # probably should treat RP MH RE as continuous...
+  mutate(across(c(BP, GH,PF, VT, SF,MMAS), ~factor(., ordered = TRUE))) ##|>
+ # mutate(across(c(BP, GH, MH, PF, RE, RP,VT, SF,MMAS), ~factor(., ordered = TRUE))) ##|>
+ # mutate(across(c(BP, GH, MH, PF, RE, RP,VT, SF,MMAS), ~factor(.))) 
 
-```{r con cat lists}
 # Detecting continuous and categorical variables
 continuous_vars <- c()
 categorical_vars <- c()
 
 for(col_name in names(df)) {
   # Assuming continuous variables are of type numeric and have more unique values
-  if(is.numeric(df[[col_name]]) && length(unique(df[[col_name]])) > 10) { 
+  if(is.numeric(df[[col_name]]) && length(unique(df[[col_name]])) > 5) { 
     continuous_vars <- c(continuous_vars, col_name)
   } else { 
     categorical_vars <- c(categorical_vars, col_name)
   }
 }
+```
+
+### Categorical Variables
+```{r, cat}
+# delete zKey```
+
+df |> select(all_of(categorical_vars)) |> 
+  skimr:: skim()|>
+  knitr::kable(digits = 3)|> 
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover"), font_size = 12)|> 
+  kableExtra::scroll_box(width = "100%", height = "300px")
+```
+### Continuous Variables
+
+```{r, con}
+# delete zKey```
+
+df |> select(all_of(continuous_vars)) |> 
+  skimr:: skim()|>
+  knitr::kable(digits = 3)|> 
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover"), font_size = 12)|> 
+  kableExtra::scroll_box(width = "100%", height = "300px")
+```
+
+## Visualization{.tabset}
+
+
+We created a series of plots to compare the distribution of variables between the diagnosed and non-diagnosed groups.
+
+
+### Demographic
+
+```{r start over with data pre processing}
+
+# delete zKey
 continuous_vars = continuous_vars[-1]
-```
+
+df = df_raw |>
+  # deal with nominal data
+  mutate(DBTYPE = if_else(is.na(DBTYPE), 0, DBTYPE),
+         DBRX = if_else(DBRX == 1, 1, 0, missing = 0),
+         DBIN = if_else(DBIN == 1, 1, 0, missing = 0),
+         MMAS = if_else(is.na(MMAS),-1,MMAS)) |>
+  mutate(across(c(DESEX, DBDX,DBTYPE,DBRX,DBIN), ~factor(.))) |>
+  mutate(across(c(BP, GH,  PF, VT, SF,MMAS), ~factor(.))) |>
+  mutate(IFHOS = if_else(RUHP6Q >0,1,0))
+#  mutate(across(c(BP, GH, MH, PF, RE, RP,VT, SF,MMAS), ~factor(.)))  
+# don't checked on the order, so all categorical data will be one-hot encoding
+  
+df_encode = df |>
+  mutate(DBMed= if_else(DBRX == 1 & DBIN == 1, "Oral & Insulin",
+                        if_else(DBRX == 1 & DBIN == 0, "Oral only",
+                               if_else(DBRX == 0 & DBIN == 1, "Insulin only","None")))) |>
+  mutate(DESEX = factor(DESEX, levels = c(1, 2), labels = c("Male", "Female")),
+         DBDX = factor(DBDX, levels = c(0, 1), labels = c("Not Diagnosed", "Diagnosed")),
+         DBTYPE = factor(DBTYPE, levels = c(0, 1, 2), labels = c("Not Diagnosed", "Type 1", "Type 2")),
+         DBRX = factor(DBRX, levels = c(0, 1), labels = c("Not Using Oral", "Using Oral")),
+         DBIN = factor(DBIN, levels = c(0, 1), labels = c("Not Using Insulin", "Using Insulin"))) 
+
+p1 = ggplot(df_encode |> filter(!is.na(BMI)), aes(x = BMI,col = DBDX)) +geom_density()
+p2 = ggplot(df_encode , aes(x = DEAGE,col = DBDX)) +geom_density()
+p3 = ggplot(df_encode , aes(x = DESEX,fill = DBDX)) +geom_bar()
 
 
-```{r, relationship of disease, type, oral and insulin use}
-df_encode |>
-  count(DBDX, DBTYPE, DBIN, DBRX#,wt = RUHP6Q
-        ) |>
-  count_to_sunburst(fill_by_n = TRUE)
-```
-## Implement
+subplot(ggplotly(p1),ggplotly(p2), ggplotly(p3),nrows = 1)
 
-```{r implement}
 df |> filter(!is.na(BMI)) |> group_by(DBDX) |> summarise(mean(BMI))
 
 df = df |>
@@ -92,78 +155,241 @@ df_encode = df_encode |>
                        if_else(is.na(BMI) & DBDX == 1, 33.21504,BMI)),
          MMAS = as.numeric(as.character(MMAS)),
          MMAS = if_else(is.na(MMAS),-1,MMAS))
-ggplot(df_encode, aes(x = BMI,col = DBDX)) +geom_density()
-```
 
-```{r categorical univarite}
-cat_result = tibble(
-  vars = categorical_vars) |>
-  filter(!(vars %in% c("DBRX","DBIN","DBDX","DBTYPE"))) |> # filter these out for 0 values
-  mutate(summary = map(vars, \(x) chisq.test(df[[x]], df[['DBDX']])),
-         summary = map(summary, broom::tidy ))|>
-  unnest(summary) |>
-  select(vars,statistic,p.value) |>
-  mutate(if_sig = if_else(p.value < 0.05,1,0))
-cat_result
+
+ggplot(df_encode , aes(x = DEAGE,y = RUHP6Q)) +geom_point()+geom_smooth()
+
 ```
 
 
+### Diabetes
+Series of variables related to the diagnose, type, medication regarding diabetes.
 
-```{r continuous univarite}
-con_result = tibble(
-  vars = continuous_vars) |>
-  #filter(!(vars %in% c("zKey"))) |> # filter these out for 0 values
-  mutate(#x = df|>filter(DBDX == 0) |> select(vars))
-         summary = map(vars, \(x) wilcox.test(df|>filter(DBDX == 0) |> select(x) |> pull(),
-                                              df|>filter(DBDX == 1) |> select(x) |> pull())),
-         summary = map(summary, broom::tidy ))|>
-  unnest(summary) |>
-  select(vars,statistic,p.value) |>
-  mutate(if_sig = if_else(p.value < 0.05,1,0))
-con_result
+```{r, relationship of disease, type, oral and insulin use}
+p1 = df_encode |>
+  count(DBDX, DBTYPE, DBIN, DBRX,wt = RUHP6Q
+        ) |>
+  count_to_sunburst(fill_by_n = TRUE)
+
+p2 = df_encode |> 
+  filter(DBDX == "Diagnosed") |>
+  filter(RUHP6Q >0) |>
+ # mutate(neighbourhood = fct_reorder(neighbourhood, price)) |> 
+  plot_ly(y = ~RUHP6Q, color = ~DBMed, type = "box", colors = "viridis")
+
+p1
+p2
 ```
 
-```{r}
+
+### Quality Life Score
+
+### Correlation 
+
+Two pairs of variables, `MH` & `MCS`, `RP` & `RPS`, exhibit a high correlation (greater than 0.8), suggesting that one variable from each correlated pair should be considered for exclusion to avoid multicollinearity.
+
+```{r, corrplot}
 corrplot::corrplot(cor(df |> select(any_of(continuous_vars))), "number")
+#df = df |>select(-RP)
 ```
 
-# Possion Regression
+# Q1. 
+
+**Does diagnosed patients have larger frequency of hospitalizations?**
+
+Diagnosed individuals may have a higher rate of hospitalizations due to the direct implications of managing their condition, which could include more frequent medical interventions, monitoring, and possible complications. 
+
+We compared `RUHP6Q` values between diagnosed and non-diagnosed groups via a bar plot, noticing many zeros, indicating overdispersion and the potential need for specialized models. The diagnosed group showed higher means and standard errors, as expected.
+
+Before building regression model, we used `DEAGE`, `BMI`, and `DESEX` to build a propensity score model with DBDX. This helped account for baseline differences that could affect both the likelihood of disease and the outcomes `RUHP6Q`.PSM helped ensure that the comparison between diagnosed and non-diagnosed groups in subsequent NB and ZINB regressions is fair and balanced.Almost 99.9% in the diagnosed group was matched 1-1 to the non-diagnosed group. We then applied negative binomial regression and zero-inflated models, with a detailed summary available in the hidden code section. 
 
 
-```{r, eval = FALSE}
+```{r Q1}
+df_summary = df_encode |> group_by(DBDX) |> 
+  summarise(mean = round(mean(RUHP6Q), 4),
+            sd = round(sd(RUHP6Q),4))
+p1 = df_encode |> group_by(RUHP6Q,DBDX) |> 
+  summarise(cnt =n()) |>
+  ggplot(aes(x= RUHP6Q, y = cnt, fill = DBDX,
+            text = paste("RUHP6Q",RUHP6Q ,"<br>Count:", cnt))) + 
+  geom_bar(stat = "identity",position = "dodge")+
+  geom_text(x = 70, y = 62000, label = paste("DBDX = 0", "; Mean",df_summary[1,2],"; SD",df_summary[1,3])
+            )+
+  geom_text(x = 70, y = 59000, label = paste("DBDX = 1", "; Mean",df_summary[2,2],"; SD",df_summary[2,3])
+            )
+p1_plotly = ggplotly(p1,tooltip = "text")
+p1_plotly
 
-df_type2 = df |> filter(DBTYPE == 2)
+# build a PSM based on age, sex, bmi
+#ps_model <- matchit(DBDX ~ DEAGE + BMI +DESEX, data = df, method = "nearest",caliper = 0.2)
+#saveRDS(ps_model, file = "./model/ps_model.rds")
+ps_model <- readRDS("./model/ps_model.rds")
+# Check balance before and after matching
+summary(ps_model)
+
+# Extract the matched data
+matched_data <- match.data(ps_model)
 
 
 
-x_matrix <- model.matrix(~ DEAGE+DESEX+BMI+DBRX+DBIN+
-                           CCI+MMAS+PCS+MCS+BP+GH+VT+SF+MH+RE+RP+PF+WPACTIMP, data = df_type2 )[, -1] # Creating a model matrix, excluding the intercept
-y_vector <- df_type2$RUHP6Q
+nb_m1 <- MASS::glm.nb(RUHP6Q ~ DBDX, data = matched_data)
+summary(nb_m1)
 
-lambda_values <- 10^seq(-10, 0, length.out=100)
-# Fit a Poisson regression model using glmnet (for demonstration, using LASSO)
-cv_fit <- cv.glmnet(x_matrix, y_vector,
-                     family = "poisson", 
-                    alpha = 1,standardize=TRUE, lambda = lambda_values)
-
-# Plot the cross-validation curve
-plot(cv_fit)
-
-# Extract the best model (lambda value that gives minimum mean cross-validated error)
-best_lambda <- cv_fit$lambda.min
-
-# Fit the model with the selected lambda
-best_model <- glmnet(x_matrix, y_vector, standardize=TRUE,
-                     family = "poisson",maxit=1000000, alpha = 1, lambda = best_lambda)
-
+zinp_m1 <-zeroinfl(RUHP6Q~ DBDX,data= matched_data , dist="negbin") 
+summary(zinp_m1)
 ```
 
-```{r, eval = FALSE}
-for (i in continuous_vars){
-  p = ggplot(df_type2,aes_string(x = 'RUHP6Q',y = i))+geom_point() +geom_smooth()
-  print(p)
-}
 
+The Negative Binomial regression analysis reveals a significant difference in `RUHP6Q` between groups defined by `DBDX`. Specifically, the `DBDX1` coefficient is positive and significant, indicating that being in the diagnosed group is associated with a higher count of `RUHP6Q`, compared to the non-diagnosed group. The model's fit is underscored by a substantial difference between the null and residual deviance, and a relatively low theta suggests overdispersion. The model's AIC provides a measure for comparing with alternative models. The coefficient for `DBDX1` suggests that diagnosed individuals have a \( e^{0.6779} \approx 1.97 \) times higher rate of hospitalizations in the past 6 months compared to those not diagnosed, all else being equal. This indicates a significant impact of diagnosis on hospitalization frequency.
+
+
+As for the Zero-Inflated Negative Binomial model fitted to `RUHP6Q` against `DBDX`. In the count model, `DBDX1` has a positive coefficient, indicating an association between being in the `DBDX1` group and an increase in the `RUHP6Q` count. The significant negative coefficient for `Log(theta)` suggests overdispersion in the data. The zero-inflation part's intercept is significant, suggesting different levels of zero counts not explained by the count model alone, but the `DBDX1` effect is not significant here, indicating no clear difference in zero-inflation between `DBDX` groups.
+
+As the Negative Binomial regression model suggested, diagnosed individuals have around 1.97 times higher rate of hospitalizations in the past 6 months compared to those not diagnosed.This association underscores the healthcare needs and challenges faced by those diagnosed with conditions requiring ongoing treatment or observation.
+
+
+*How to test / verify the assumptions?*
+
+# Q2.
+
+**Does Type 1 Diabetes patients have better medication adherence score?**
+
+We exclusively considered patients with confirmed diagnoses and employed a chi-square test to investigate potential disparities in the distribution of Morisky Medication Adherence Scores (MMAS) between individuals with type 1 and type 2 diabetes. The analysis revealed statistically significant differences in MMAS distribution between type 1 and type 2 diabetes patients (see the results provided). With a significance level set at 0.05, the findings indicate notable discrepancies in MMAS distribution among the two diabetic subgroups."
+
+```{r Q2 chisq}
+df_db= df |> filter(DBTYPE!="0") 
+chisq.test(df_db[["DBTYPE"]], df_db[['MMAS']])
 ```
 
+The bar plot and pie charts further illustrate the difference.
+
+```{r Q2 plot}
+df_summary = df_encode |> filter(DBTYPE !=0) |> group_by(DBTYPE) |> 
+  summarise(mean = round(mean(MMAS), 4),
+            sd = round(sd(MMAS),4))
+
+df_db_group = df_db|> group_by(DBTYPE,MMAS) |> summarise( cnt =  n())
+
+p2 = df_db_group |>
+  ggplot(aes(MMAS,fill = DBTYPE, y = cnt,text = paste("MMAS",MMAS ,"<br>Count:", cnt)))+ 
+  geom_bar(stat = "identity",position = "dodge")  +
+  geom_text(x = 3.5, y = 4200, label = paste("Type 1", "; Mean",df_summary[2,2],"; SD",df_summary[2,3])
+            )+
+  geom_text(x = 3.5, y = 3800, label = paste("Type 2", "; Mean",df_summary[3,2],"; SD",df_summary[3,3])
+            )
+p2_plotly = ggplotly(p2,tooltip = "text")
+p2_plotly
+
+plot_ly()|>
+  add_pie(
+    data = df_db_group |> filter(DBTYPE == "1"), labels = ~MMAS, values = ~cnt,
+    colors = viridis::viridis_pal()(5),
+    textposition = "inside", textinfo = "label+percent",
+    name = "Type 1", domain = list(row = 0, column = 0)
+  )|>
+  plotly::add_pie(
+    data = df_db_group|> filter(DBTYPE == "2"), labels = ~MMAS, values = ~cnt,
+    colors = viridis::viridis_pal()(5),
+    textposition = "inside", textinfo = "label+percent",
+    name = "Type 2", domain = list(row = 0, column = 1)
+  )|>
+  layout(
+   # title = "多图布局", showlegend = F,
+    grid = list(rows = 1, columns = 2),
+    xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+    yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+    colorway = viridis::viridis_pal()(5)
+  )|> 
+  config(displayModeBar = FALSE) 
+```
+**For Type 1 Diabetes patients, does higher MMAS lead to lower frequency of hospitalizations?**
+
+
+Specifically focusing on Type 1 diabetes patients, we constructed a negative binomial regression model. Given that the Morisky Medication Adherence Score (MMAS) variable only takes 5 unique values, we treated it as categorical data, resulting in a slightly complex interpretation. Comparing patients with `MMAS` = 0 to those with `MMAS` = 1,2 we found that the former group had approximately \( e^{0.4924} \approx 1.64 \) times higher rates of hospitalizations in the past 6 months, while the latter group had approximately \( e^{0.1285} \approx 1.14 \) times higher rates. However, for higher levels of `MMAS` (`MMAS`= 3,4), they exhibited the opposite effect, suggesting potentially confounding factors such as limited sample size.
+
+The statement "higher levels of MMAS lead to higher rates of hospitalization" might seem counterintuitive, especially given the expectation that better medication adherence (higher MMAS scores) should lead to better health outcomes and, consequently, lower rates of hospitalization. However, several factors could explain this apparent contradiction:
+
+*Confounding Variables*: There might be confounding variables that are not accounted for in the analysis. These variables could influence both MMAS and hospitalization rates simultaneously, leading to a spurious association between MMAS and hospitalization.
+
+*Reverse Causality*: It's possible that the relationship between MMAS and hospitalization is bidirectional. In other words, not only does medication adherence affect hospitalization rates, but hospitalization experiences could also influence future medication adherence. For example, individuals who have experienced frequent hospitalizations may become more vigilant about medication adherence, resulting in higher MMAS scores.
+
+*Disease Severity*: Higher MMAS scores might be associated with more severe or poorly managed health conditions, which could increase the risk of hospitalization. For instance, patients with chronic conditions who struggle to adhere to their medication regimens may experience disease progression, leading to exacerbations and hospital admissions.
+
+
+```{r, Q2 nb}
+df |> group_by(DBTYPE) |> summarise(mean(MMAS))
+data <- df |> 
+  filter(DBTYPE != "0") |> 
+  mutate(DBTYPE = factor(DBTYPE, levels = c("1", "2"))) 
+
+data$DBTYPE = relevel(data$DBTYPE, ref = "2")
+
+#nb_m2 <- MASS::glm.nb(RUHP6Q ~ MMAS*DBTYPE, data)
+#summary(nb_m2)
+
+nb_m2 <- MASS::glm.nb(RUHP6Q ~ factor(MMAS), data = df |> filter(DBTYPE == 1 ))
+summary(nb_m2)
+```
+
+
+# Q3.
+
+**For Type2 DB patients, how to predict the possibility of hospitalizations in 6 months?**
+
+According to [the National Institute of Diabetes and Digestive and Kidney Disease](https://www.niddk.nih.gov/health-information/diabetes/overview/symptoms-causes), the causes of Type 1 and Type 2 diabetes are quite distinct. Type 1 diabetes is believed to occur when the immune system attacks and destroys insulin-producing beta cells in the pancreas, with genetics and environmental factors like viruses potentially triggering this autoimmune response. Type 2 diabetes is primarily caused by lifestyle factors and genetics, including being overweight, physically inactive, and having insulin resistance. Obesity and physical inactivity increase the risk, and the disease often runs in families, being more common in certain racial/ethnic groups. Also, Type 1 is an autoimmune condition with onset typically in younger individuals, requiring insulin management from the start. Type 2, more prevalent and influenced by lifestyle and genetics, usually appears in adults but is increasingly found in younger populations due to lifestyle factors. Management may start with lifestyle changes and medication, with insulin needed as the condition progresses. 
+
+Given the distinct nature of Type 1 and Type 2 diabetes, it is prudent to develop predictive models separately for each type. Due to the limited sample size available for Type 1 diabetes, our focus was directed solely towards Type 2.
+
+```{r groupby DBTYPE}
+
+df |> group_by(DBTYPE) |>summarise( hospitalizations = sum(IFHOS),
+                                    non_hospitalizations = n()-sum(IFHOS))
+
+df |> group_by(DBTYPE) |>summarise( yes = sum(IFHOS),
+                                    no = n()-sum(IFHOS))
+```
+
+
+The LASSO regression model, used for variable selection and shrinkage, indicates key factors influencing the number of hospitalizations in the past 6 months (`RUHP6Q`). We used cross validation to find the best performed hyperpramater(highest AUC). 
+Certainly, here's the completion of the paragraph:
+
+The bar plot displays the estimate of coefficients from the lasso regression, wherein we filtered only those with an absolute value larger than 0. Among these variables, `DBIN1` (indicating the use of insulin) exhibits a significant positive association, suggesting that individuals requiring insulin are more likely to experience frequent hospitalizations. This association may stem from the fact that insulin therapy is often prescribed to individuals with more severe forms of diabetes, necessitating closer medical monitoring and potentially leading to a higher likelihood of hospital admissions. Additionally, the variable `CCI` (Charlson comorbidity index) also demonstrates a positive association with the outcome. This finding aligns with expectations, as a greater burden of comorbidities, as captured by the Charlson index, is likely to increase the complexity of patient care and thereby contribute to a higher frequency of hospitalizations. Moreover, `VT` (Vitality quality of life) exhibits a positive impact on the outcome and increases the likelihood of hospital admissions. One possible reason for this unexpected association could be that individuals with higher vitality levels may engage in more active lifestyles, leading to a higher risk of accidents or injuries that require hospitalization. Additionally, individuals with higher vitality levels may overexert themselves or push beyond their physical limits, potentially increasing the likelihood of health complications that necessitate hospital care.
+
+The negative impact observed for `PF` and `SF` on the likelihood of hospitalization aligns with the expectation that better physical and social functioning are associated with improved overall health outcomes, reduced susceptibility to illness or injury, and enhanced support mechanisms that help individuals manage their health needs outside of hospital settings.
+
+Variables like `BMI` and `DESEX2` (Female) also contribute to the model, albeit with smaller and in some cases negative coefficients, affecting the hospitalization rate differently. Notably, `BMI` has a negative coefficient, suggesting that higher BMI is associated with fewer hospitalizations, which may require further investigation to understand the underlying context.
+
+It's important to consider the possibility of confounding variables or complex interactions within the dataset that may influence the relationship among predictors and hospital admissions. Further investigation, including additional analyses or exploration of underlying mechanisms, may be necessary to fully understand this association.
+
+```{r lasso}
+set.seed(2378)
+source("./function/lasso_regression.R")
+
+result_lasso_typ2 = db_lasso(df, DBtype =2 ,prop = 0.7)
+#result_lasso_nd = db_lasso(df, DBtype =0 )
+
+result_lasso_typ2$plot_estimate
+#result_lasso_nd$plot_estimate
+```
+
+
+The model's performance is characterized by excellent specificity (1.00) indicating all negative cases are correctly identified. However, the sensitivity is exceptionally low at 0.0173, meaning the model identifies very few positive cases. The accuracy is high (0.8791), which seems impressive, but it is misleading due to the class imbalance reflected in the prevalence rate (0.1230). The Kappa score is low (0.0300), suggesting that the agreement between the predicted and actual values is only slightly better than chance. The AUC of 0.7118 indicates a fair ability to distinguish between the classes. These metrics together suggest that while the model is excellent at predicting the negative class, it fails to adequately capture the positive class, likely due to class imbalance.
+
+```{r model performance}
+result_lasso_typ2$performance_matrix |>
+  filter(!(Term %in% c('AccuracyLower','AccuracyUpper','AccuracyNull','AccuracyPValue','McnemarPValue'))) |>
+  arrange(desc(Value))|>
+    ggplot(aes(x = reorder(Term, Value), y = Value, fill = reorder(Term, Value),
+               text = paste("Term:", Term, "<br>Value:", round(Value, 4))
+    )) + 
+    geom_col() + coord_flip() +
+    theme(legend.position = "none") +  
+    labs(#title = "Feature Estimate of LASSO Regression",
+      x = 'Values',
+      y = 'Evaluation Terms')
+#result_lasso_nd$performance_matrix|>
+#  knitr::kable(digits = 3)|> 
+ # kableExtra::kable_styling(bootstrap_options = c("striped", "hover"), font_size = 12)|> 
+ # kableExtra::scroll_box(width = "100%", height = "300px")
+```
 

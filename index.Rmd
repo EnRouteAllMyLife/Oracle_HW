@@ -1,15 +1,48 @@
+
 ---
-title: "Welcome!"
-output: 
-  html_document:
-    toc_float: true
 ---
-
-Hi, I'm Ada (Yumeng Qi), currently a first-year MS student in Biostatistics at Columbia University.
-
-
-<div style="text-align: center;">
-  <img src="Graphs/the_world_fascinates_me.jpeg" style="width: 70%;">
+<div class="title-box">
+  <h1>Oracle Homework Assignment </h1>
 </div>
 
+<div class="textbox">
+  <p>In this exploratory <a href="report.html">study</a>, we aim to investigate the frequency of hospitalizations over the past six months and explore potential associations with demographic factors, diabetes-related indicators, quality of life measures, and other health-related variables.</p>
 
+  <p>Main Research Questions:</p>
+  <ul>
+    <li>Does diagnosed patients have larger frequency of hospitalizations?(EDA,PSM,NB regression, ZINB)</li>
+    <li>Does Type 1 Diabetes patients have better medication adherence score? For Type 1 Diabetes patients, does higher MMAS lead to lower frequency of hospitalizations? (contingency table chi-square test, ZINB) </li>
+    <li>For Type2 DB patients, how to predict the possibility of hospitalizations in 6 months? (LASSO)</li>
+  
+  </ul>
+
+
+</div>
+
+```{css, echo=FALSE}
+body {
+  background-image: url('Graphs/SmokyBesideWindow.jpeg');
+  background-size: cover; 
+  background-repeat: no-repeat;
+  background-attachment: fixed; 
+}
+
+.title-box {
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+  margin: 20px;
+}
+
+.textbox {
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border-radius: 5px;
+  margin: 10px 0;
+}
+
+.textbox iframe {
+  display: block;
+  margin: 0 auto;
+}

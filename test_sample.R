@@ -52,3 +52,26 @@ mat <- model.matrix(~ ord_var, data = df)
 
 # 查看结果
 print(mat)
+library(plotly)
+library(data.table)
+diamonds <- as.data.table(df_encode |> filter(DBDX == "Diagnosed"))
+names(diamonds)
+diamonds[, .(cnt = .N), by = .(DBMed)] %>%
+  plot_ly(x = ~DBMed, y = ~cnt, type = "bar") %>%
+  add_text(
+    text = ~ scales::comma(cnt), y = ~cnt,
+    textposition = "top middle",
+    cliponaxis = FALSE, showlegend = FALSE
+  )
+
+
+plot_ly(diamonds,
+        x = ~DBMed,  y = ~RUHP6Q, color = ~DBTYPE,
+        colors = "Accent", type = "bar"
+) 
+
+df_encode |> 
+  filter(DBDX == "Diagnosed") |>
+  filter(RUHP6Q >0) |>
+ # mutate(neighbourhood = fct_reorder(neighbourhood, price)) |> 
+  plot_ly(y = ~RUHP6Q, color = ~DBMed, type = "box", colors = "viridis")
