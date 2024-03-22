@@ -8,17 +8,24 @@ library(rsample)
 #result_lasso = db_lasso(df_lasso)
 ## split propotion
 
-db_lasso = function(df_lasso, prop = 0.8,DBtype = 2){
-  if (DBtype >0){
+db_lasso = function(df_lasso, prop = 0.8,DBtype = c("Type1", "Type2","Others")){
+  if (DBtype == "Type1"){
     df_lasso = df_lasso |> 
       mutate(IFHOS = factor(IFHOS, levels = c(0, 1), labels = c("no","yes"))) |>
       #mutate(IFHOS = factor(IFHOS, levels = c(1,0), labels = c("yes","no"))) |>
-      filter(DBTYPE == DBtype) |> 
+      filter(DBTYPE == "1") |> 
+      select(-c(zKey,RP,MH,RUHP6Q,DBTYPE,DBDX))
+  }
+  if (DBtype == "Type2"){
+    df_lasso = df_lasso |> 
+      mutate(IFHOS = factor(IFHOS, levels = c(0, 1), labels = c("no","yes"))) |>
+      #mutate(IFHOS = factor(IFHOS, levels = c(1,0), labels = c("yes","no"))) |>
+      filter(DBTYPE == "2") |> 
       select(-c(zKey,RP,MH,RUHP6Q,DBTYPE,DBDX))
   }
   else{
     df_lasso = df_lasso |> mutate(IFHOS = factor(IFHOS, levels = c(0, 1), labels = c("no","yes"))) |>
-      filter(DBTYPE == 0) |> 
+      filter(DBTYPE == "0") |> 
       select(-c(zKey,RP,MH,RUHP6Q,DBTYPE,DBDX,MMAS,DBIN,DBRX))
   }
   
@@ -98,6 +105,7 @@ db_lasso = function(df_lasso, prop = 0.8,DBtype = 2){
     mutate(Value = round(Value,4))
   
   return(list(
+    n = dim(testing_data),
     plot_lasso_tune = plot_lasso_tune,
     plot_estimate = plot_estimate,
     performance_matrix = combined_stats_tibble
