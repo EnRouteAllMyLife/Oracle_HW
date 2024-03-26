@@ -1,14 +1,12 @@
 ---
-title: "Report"
 output:
    html_document:
     code_folding: hide
     always_allow_html: true
     toc: true
     toc_float: true
+    css: styles.css
 ---
-  
-
 
 ```{r setup}
 knitr::opts_chunk$set(
@@ -23,13 +21,13 @@ knitr::opts_chunk$set(
 
 The report will discuss three main questions:
 
-* Does diagnosed patients have larger frequency of hospitalizations?
-* Does Type 1 Diabetes patients have better medication adherence score? For Type 1 Diabetes patients, does higher MMAS lead to lower frequency of hospitalizations?
-* For Type2 DB patients, how to predict the possibility of hospitalizations in 6 months?
+* Does diagnosed patients have larger frequency of hospitalizations over six months?
+* Are patients with Type 1 Diabetes more likely to adhere to medication regimens, as indicated by lower scores on the Medication Adherence Scale (MMAS)? Furthermore, among Type 1 Diabetes patients, does increased non-adherence, reflected by higher MMAS scores, correlate with a higher frequency of hospitalizations? 
+* For Type2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months?
 
 
 <div style="text-align: center;">
-  <img src="Graphs/Diabetes.webp" style="width: 70%;">
+  <img src="graph/Diabetes.webp" style="width: 70%;">
 </div>
 
 
@@ -37,13 +35,9 @@ The report will discuss three main questions:
 
 ## Descriptive Analysis{.tabset}
 
-We loaded the dataset and assigned variable types according to the codebook, identifying 11 factors—6 of which are ordinal—and 11 numeric variables, each with more than five unique values. Below, we detail the descriptive analysis.
+We loaded the dataset and assigned variable types according to the code book, identifying 11 factors—6 of which are ordinal—and 11 numeric variables, each with more than five unique values. Below, we detail the descriptive analysis.
 
 The classification within the `DBDX` disease factor, grouping 'Not diagnosed' and 'Not reporting diabetes' together, raises a concern. It suggests the potential oversight of individuals who may have diabetes but remain non-diagnosed, inadvertently categorizing them outside the diagnosed group.For this study, our data primarily concentrate on life quality scores rather than genetic or other predictors that could lead to diabetes. Consequently, we have simplified our approach by not distinguishing between non-diagnosed diabetes patients and those who have not reported the condition. This simplification have made the following implementations much easier. 
-
-We observed that a series of variables related to diabetes diagnosis, type, and medication show missing values. Given that `DBDX`, annotated as 'Not diagnosed, Missing = Not reporting diabetes,' is categorized into am single group, it is logical to treat missing values in variables directly influenced by `DBDX` (such as `DBTYPE`, `DBRX`, and `DBIN`) as 0.
-
-d`MMAS` is also related to the diagnosis of diabetes, only people who were diagnosed had records; Since it is ordinal data, we opted to fill its missing values with -1 to preserve the original meaning without distortion. As for `BMI` given the missing rate is relatively small and sample size is large enough, we implemented the missing value with the mean.
 
 ```{r load package and data}
 library(tidyverse)
@@ -56,6 +50,7 @@ library(mpath)
 library(zip)
 library(pscl)
 library(MatchIt)
+
 theme_set(theme_bw() + theme(legend.position = "bottom"))
 options(
   ggplot2.continuous.colour = "viridis",
@@ -66,7 +61,7 @@ scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 
 
-df_raw = read.delim("./Data/nhwsdata.txt") 
+df_raw = read.delim("./data/nhwsdata.txt") 
 
 df = df_raw |>
   # deal with nominal data
@@ -120,7 +115,7 @@ We created a series of plots to compare the distribution of variables between di
 
 ### Demographic
 
-We observed that demographic variables exhibit greater differences between the diagnosed and non-diagnosed groups compared to the hospitalized and non-hospitalized groups. This raises concerns that these demographic factors may act as confounding variables in our analysis.
+We observed that demographic variables exhibit greater differences between the diagnosed and non-diagnosed groups compared to the hospitalized and non-hospitalized groups. This raises concerns that these demographic factors may act as confounding variables in our analysis. Notice that for missing values in `BMI`, given the missing rate is relatively small and sample size is large enough, we implemented the missing value with the mean.
 
 ```{r start over with data pre processing}
 
@@ -139,7 +134,8 @@ df = df_raw |>
   mutate(IFHOS = if_else(RUHP6Q >0,1,0))
 #  mutate(across(c(BP, GH, MH, PF, RE, RP,VT, SF,MMAS), ~factor(.)))  
 # don't checked on the order, so all categorical data will be one-hot encoding
-  
+
+# save from the labeling
 df_encode = df |>
   mutate(DBMed= if_else(DBRX == 1 & DBIN == 1, "Oral & Insulin",
                         if_else(DBRX == 1 & DBIN == 0, "Oral only",
@@ -149,28 +145,36 @@ df_encode = df |>
          DBDX = factor(DBDX, levels = c(0, 1), labels = c("Not Diagnosed", "Diagnosed")),
          DBTYPE = factor(DBTYPE, levels = c(0, 1, 2), labels = c("Not Diagnosed", "Type 1", "Type 2")),
          DBRX = factor(DBRX, levels = c(0, 1), labels = c("Not Using Oral", "Using Oral")),
-         DBIN = factor(DBIN, levels = c(0, 1), labels = c("Not Using Insulin", "Using Insulin"))) 
+         DBIN = factor(DBIN, levels = c(0, 1), labels = c("Not Using Insulin", "Using Insulin")),
+         IFHOS = factor(IFHOS,levels = c(0,1), labels = c("Non-Hospitalized","Hospitalized"))) 
 
 p1 = ggplot(df_encode |> filter(!is.na(BMI)), aes(x = BMI,col = DBDX)) +geom_density()
 p2 = ggplot(df_encode , aes(x = DEAGE,col = DBDX)) +geom_density()
 p3 = ggplot(df_encode , aes(x = DESEX,fill = DBDX)) +geom_bar()
 
+subplot(style(ggplotly(p1), showlegend = FALSE),
+        style(ggplotly(p2), showlegend = FALSE),
+        ggplotly(p3),nrows = 1,titleX=TRUE)
+```
 
-subplot(ggplotly(p1),ggplotly(p2), ggplotly(p3),nrows = 1)
+We generate a new binary variable, `IFHOS`, to denote whether the patient has been hospitalized in the past 6 months. This variable is assigned a value of 1 if the value of `RUHP6Q` is greater than 0, indicating a recent hospitalization, and 0 otherwise.
 
+```{r ifhos}
+p1 = ggplot(df_encode |> filter(!is.na(BMI)), aes(x = BMI,col = IFHOS)) +geom_density() 
+p2 = ggplot(df_encode , aes(x = DEAGE,col = IFHOS)) +geom_density()
+p3 = ggplot(df_encode , aes(x = DESEX,fill = IFHOS)) +geom_bar()
 
-p1 = ggplot(df_encode |> filter(!is.na(BMI)), aes(x = BMI,col = factor(IFHOS))) +geom_density()
-p2 = ggplot(df_encode , aes(x = DEAGE,col = factor(IFHOS))) +geom_density()
-p3 = ggplot(df_encode , aes(x = DESEX,fill = factor(IFHOS))) +geom_bar()
-
-
-subplot(ggplotly(p1),ggplotly(p2), ggplotly(p3),nrows = 1)
+subplot(style(ggplotly(p1), showlegend = FALSE),
+        style(ggplotly(p2), showlegend = FALSE),
+        ggplotly(p3),nrows = 1,titleX=TRUE)
 ```
 
 
 ### Diabetes
 
-A series of variables pertaining to the diagnosis, type, and medication related to diabetes were listed in the dataset. Approximately 11.1% of the population was diagnosed with diabetes, of which only 6% were classified as Type 1. Regarding medication, all Type 1 patients were found to use both oral medications and insulin. For Type 2 diabetes, three medication combinations were identified: 1) those who used both oral medications and insulin, 2) those who used oral medications only, and 3) those who did not use either oral medications or insulin. The proportions of each category can be visualized in the following chart.
+We observed that a series of variables related to diabetes diagnosis, type, and medication show missing values. Given that `DBDX`, annotated as 'Not diagnosed, Missing = Not reporting diabetes,' is categorized into am single group, it is logical to treat missing values in variables directly influenced by `DBDX` (such as `DBTYPE`, `DBRX`, and `DBIN`) as 0.
+
+Approximately 11.1% of the population was diagnosed with diabetes, of which only 6% were classified as Type 1. Regarding medication, all Type 1 patients were found to use both oral medications and insulin. For Type 2 diabetes, three medication combinations were identified: 1) those who used both oral medications and insulin, 2) those who used oral medications only, and 3) those who did not use either oral medications or insulin. The proportions of each category can be visualized in the following chart.
 
 ```{r, relationship of disease, type, oral and insulin use}
 df_encode |>
@@ -178,6 +182,60 @@ df_encode |>
         ) |>
   count_to_sunburst(fill_by_n = TRUE)
 
+```
+
+### MMAS & CCI
+
+`MMAS` is also related to the diagnosis of diabetes, only people who were diagnosed had records; Since it is ordinal data, we opted to fill its missing values with -1 to preserve the original meaning without distortion. 
+
+
+```{r}
+p1 = df_encode |> ggplot(aes( x = CCI,col = DBDX)) + geom_density()
+
+p2 = df_encode |> ggplot(aes( x = DBDX, y = CCI,fill = DBDX)) + geom_boxplot()
+
+subplot(style(ggplotly(p1), showlegend = TRUE),
+        style(ggplotly(p2), showlegend = FALSE),titleX=TRUE)
+```
+
+### SF-36
+
+[Short Form 36 (SF-36) Health Survey](https://hqlo.biomedcentral.com/articles/10.1186/s12955-017-0625-9) includes 36 items or questions that assess functional health and well-being from the perspective of the patient. The items contribute to eight health domains of physical functioning(`PF`), role limitations due to physical problems(`RP`), bodily pain(`BP`), general health(`GH`), vitality(`VT`), social functioning(`SF`), role limitations due to emotional problems(`RE`) and mental health(`MH`) . The eight domains all contribute to physical component summary (`PCS`) and mental component summary (`MCS`) scores. 
+
+Given the eight subdomains SF-36 are likely to contribute to `PCS` and `MCS` scores. It's essential to check the correlation pairwise in case of multicollinearity.
+
+
+### RUHP6Q(the outcome)
+
+We compared `RUHP6Q` values between diagnosed and non-diagnosed groups via a bar plot, noticing many zeros, indicating overdispersion and the potential need for specialized models. The diagnosed group showed higher means and standard errors, as expected.
+
+
+```{r,RUHP6Q}
+
+# for annotation only 
+df_summary = df_encode |> group_by(DBDX) |> 
+  summarise(mean = round(mean(RUHP6Q), 4),
+            sd = round(sd(RUHP6Q),4))
+# 
+p1 = df_encode |> group_by(RUHP6Q,DBDX) |> 
+  summarise(cnt =n()) |>
+  mutate(percentage = round(cnt / 75000* 100,2)) |>
+  
+  ggplot(aes(x= RUHP6Q, y = cnt, fill = DBDX,
+            text = paste("RUHP6Q",RUHP6Q ,
+                         "<br>Count:", cnt,
+                         "<br>Perc:", paste0(percentage,"%")))) + 
+  geom_bar(stat = "identity",position = "dodge")+
+  geom_text(x = 70, y = 62000, 
+            label = paste("DBDX = 0", "; Mean",df_summary[1,2],"; SD",df_summary[1,3]),
+            size = 3
+            )+
+  geom_text(x = 70, y = 59000, 
+            label = paste("DBDX = 1", "; Mean",df_summary[2,2],"; SD",df_summary[2,3]),
+            size = 3
+            )
+p1_plotly = ggplotly(p1,tooltip = "text")
+p1_plotly
 ```
 
 ### Correlation 
@@ -191,34 +249,27 @@ corrplot::corrplot(cor(df |> select(any_of(continuous_vars))), "number")
 
 # Q1. 
 
-**Does diagnosed patients have larger frequency of hospitalizations?**
+**Does diagnosed patients have larger frequency of hospitalizations over six months?**
 
-Diagnosed individuals may have a higher rate of hospitalizations due to the direct implications of managing their condition, which could include more frequent medical interventions, monitoring, and possible complications. 
+Based on the information provided in the plot:
 
-We compared `RUHP6Q` values between diagnosed and non-diagnosed groups via a bar plot, noticing many zeros, indicating overdispersion and the potential need for specialized models. The diagnosed group showed higher means and standard errors, as expected.
+- The 'Diagnosed' group (`DBDX` = 1) has a mean value of `r df_summary[2,2]` with a standard deviation (SD) of `r df_summary[2,3]`.
+- The 'Not Diagnosed' group (`DBDX` = 0) has a mean value of `r df_summary[1,2]` with an SD of `r df_summary[1,3]`.
+
+The higher mean in the 'Diagnosed' group suggests that, on average, diagnosed patients have a higher frequency of hospitalizations over six months compared to non-diagnosed patients. Moreover, the larger standard deviation in the 'Diagnosed' group indicates more variability in hospitalization frequency among diagnosed patients.
+
+Reasons why diagnosed patients might have a larger frequency of hospitalizations could include:
+
+1. **Management of the diagnosed condition:** Patients with a diagnosis may require regular hospital visits for treatment or management of their condition.
+2. **Complications:** A diagnosed condition may lead to complications that necessitate frequent hospital stays.
+3. **Monitoring:** Some conditions might require close medical monitoring, possibly in a hospital setting.
+4. **Post-diagnosis care:** Initial hospitalizations might be more frequent as the care protocol is established immediately following diagnosis.
+
 
 Before building regression model, we used `DEAGE`, `BMI`, and `DESEX` to build a propensity score model with DBDX. This helped account for baseline differences that could affect both the likelihood of disease and the outcomes `RUHP6Q`.PSM helped ensure that the comparison between diagnosed and non-diagnosed groups in subsequent NB and ZINB regressions is fair and balanced.Almost 99.9% in the diagnosed group was matched 1-1 to the non-diagnosed group. We then applied negative binomial regression and zero-inflated models, with a detailed summary available in the hidden code section. 
 
 
 ```{r Q1}
-df_summary = df_encode |> group_by(DBDX) |> 
-  summarise(mean = round(mean(RUHP6Q), 4),
-            sd = round(sd(RUHP6Q),4))
-p1 = df_encode |> group_by(RUHP6Q,DBDX) |> 
-  summarise(cnt =n()) |>
-  ggplot(aes(x= RUHP6Q, y = cnt, fill = DBDX,
-            text = paste("RUHP6Q",RUHP6Q ,"<br>Count:", cnt))) + 
-  geom_bar(stat = "identity",position = "dodge")+
-  geom_text(x = 70, y = 62000, 
-            label = paste("DBDX = 0", "; Mean",df_summary[1,2],"; SD",df_summary[1,3]),
-            size = 3
-            )+
-  geom_text(x = 70, y = 59000, 
-            label = paste("DBDX = 1", "; Mean",df_summary[2,2],"; SD",df_summary[2,3]),
-            size = 3
-            )
-p1_plotly = ggplotly(p1,tooltip = "text")
-p1_plotly
 
 # build a PSM based on age, sex, bmi
 #ps_model <- matchit(DBDX ~ DEAGE + BMI +DESEX, data = df, method = "nearest",caliper = 0.2)
@@ -233,7 +284,7 @@ matched_data <- match.data(ps_model)
 nb_m1 <- MASS::glm.nb(RUHP6Q ~ DBDX, data = matched_data)
 summary(nb_m1)
 
-zinp_m1 <-zeroinfl(RUHP6Q~ DBDX,data= matched_data , dist="negbin") 
+zinp_m1 <-zeroinfl(RUHP6Q~ DBDX*CCI,data= matched_data , dist="negbin") 
 summary(zinp_m1)
 ```
 
