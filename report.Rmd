@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 The report will discuss three main questions:
 
-* Does diagnosed patients have larger frequency of hospitalizations over six months?
+* Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent??
 * Are patients with Type 1 Diabetes more likely to adhere to medication regimens, as indicated by lower scores on the Medication Adherence Scale (MMAS)? Furthermore, among Type 1 Diabetes patients, does increased non-adherence, reflected by higher MMAS scores, correlate with a higher frequency of hospitalizations? 
 * For Type2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months?
 
@@ -147,14 +147,6 @@ df_encode = df |>
          DBRX = factor(DBRX, levels = c(0, 1), labels = c("Not Using Oral", "Using Oral")),
          DBIN = factor(DBIN, levels = c(0, 1), labels = c("Not Using Insulin", "Using Insulin")),
          IFHOS = factor(IFHOS,levels = c(0,1), labels = c("Non-Hospitalized","Hospitalized"))) 
-
-p1 = ggplot(df_encode |> filter(!is.na(BMI)), aes(x = BMI,col = DBDX)) +geom_density()
-p2 = ggplot(df_encode , aes(x = DEAGE,col = DBDX)) +geom_density()
-p3 = ggplot(df_encode , aes(x = DESEX,fill = DBDX)) +geom_bar()
-
-subplot(style(ggplotly(p1), showlegend = FALSE),
-        style(ggplotly(p2), showlegend = FALSE),
-        ggplotly(p3),nrows = 1,titleX=TRUE)
 ```
 
 We generate a new binary variable, `IFHOS`, to denote whether the patient has been hospitalized in the past 6 months. This variable is assigned a value of 1 if the value of `RUHP6Q` is greater than 0, indicating a recent hospitalization, and 0 otherwise.
@@ -204,7 +196,14 @@ subplot(style(ggplotly(p1), showlegend = TRUE),
 
 Given the eight subdomains SF-36 are likely to contribute to `PCS` and `MCS` scores. It's essential to check the correlation pairwise in case of multicollinearity.
 
+```{r}
+SF_36 = c("PCS","MCS","PF","RE","RP","SF","VT", "GH" ,"MH","BP")
 
+p1 = df_encode |> ggplot(aes( x = PCS,col = IFHOS)) + geom_density()
+p2 = df_encode |> ggplot(aes( x = MCS,col = IFHOS)) + geom_density()
+subplot(style(ggplotly(p1), showlegend = TRUE),
+        style(ggplotly(p2), showlegend = FALSE),titleX=TRUE)
+```
 ### RUHP6Q(the outcome)
 
 We compared `RUHP6Q` values between diagnosed and non-diagnosed groups via a bar plot, noticing many zeros, indicating overdispersion and the potential need for specialized models. The diagnosed group showed higher means and standard errors, as expected.
@@ -249,31 +248,43 @@ corrplot::corrplot(cor(df |> select(any_of(continuous_vars))), "number")
 
 # Q1. 
 
-**Does diagnosed patients have larger frequency of hospitalizations over six months?**
+**Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent?**
 
 Based on the information provided in the plot:
 
 - The 'Diagnosed' group (`DBDX` = 1) has a mean value of `r df_summary[2,2]` with a standard deviation (SD) of `r df_summary[2,3]`.
 - The 'Not Diagnosed' group (`DBDX` = 0) has a mean value of `r df_summary[1,2]` with an SD of `r df_summary[1,3]`.
 
-The higher mean in the 'Diagnosed' group suggests that, on average, diagnosed patients have a higher frequency of hospitalizations over six months compared to non-diagnosed patients. Moreover, the larger standard deviation in the 'Diagnosed' group indicates more variability in hospitalization frequency among diagnosed patients.
+The higher mean in the 'Diagnosed' group suggests that, on average, diagnosed patients have a higher frequency of hospitalizations over six months compared to non-diagnosed patients.Also, the Wilcoxon rank sum test shows there is a statistically significant difference in the `RUHP6Q` variable between the two groups, with the median value of `RUHP6Q` being significantly higher in the diagnosed group than in the non-diagnosed group($\alpha = 0.05,\ W =36532880,\ p-value < 2.2e-16$) . Moreover, the larger standard deviation in the 'Diagnosed' group indicates more variability in hospitalization frequency among diagnosed patients.
 
-Reasons why diagnosed patients might have a larger frequency of hospitalizations could include:
+```{r, q1 wilcox}
+x = df |> filter(DBDX == 1) |> select(RUHP6Q) |> pull()
+y = df |> filter(DBDX == 0) |> select(RUHP6Q) |> pull() 
+wilcox.test(x,y, alternative = "greater")
+```
 
-1. **Management of the diagnosed condition:** Patients with a diagnosis may require regular hospital visits for treatment or management of their condition.
-2. **Complications:** A diagnosed condition may lead to complications that necessitate frequent hospital stays.
-3. **Monitoring:** Some conditions might require close medical monitoring, possibly in a hospital setting.
-4. **Post-diagnosis care:** Initial hospitalizations might be more frequent as the care protocol is established immediately following diagnosis.
+To accurately quantify the difference, we plan to construct a regression model. However, prior to this, it's crucial to address an important concern related to demographic characteristics.
 
+Age and BMI are significant risk factors for diabetes. Older age groups often have a higher prevalence of diabetes, and higher BMI is associated with an increased risk of developing type 2 diabetes. Such trend could be observed from the plot below.By including these variables, the model accounts for important risk factors that might influence the probability of being diagnosed with diabetes. Age, BMI, and sex are also potential confounders because they can be associated with both the likelihood of receiving a diagnosis (exposure) and the outcome of interest. If not adjusted for, these variables could bias the results of the study. Therefore, prior to developing the regression model, we constructed a propensity score model utilizing `DEAGE`, `BMI`, and `DESEX` as predictors of `DBDX`. The propensity score model serves to balance these groups and thereby enhance the robustness of the subsequent regression analysis.
 
-Before building regression model, we used `DEAGE`, `BMI`, and `DESEX` to build a propensity score model with DBDX. This helped account for baseline differences that could affect both the likelihood of disease and the outcomes `RUHP6Q`.PSM helped ensure that the comparison between diagnosed and non-diagnosed groups in subsequent NB and ZINB regressions is fair and balanced.Almost 99.9% in the diagnosed group was matched 1-1 to the non-diagnosed group. We then applied negative binomial regression and zero-inflated models, with a detailed summary available in the hidden code section. 
+```{r, demographic by diagnos}
+p1 = ggplot(df_encode |> filter(!is.na(BMI)), aes(x = BMI,col = DBDX)) +geom_density()
+p2 = ggplot(df_encode , aes(x = DEAGE,col = DBDX)) +geom_density()
+p3 = ggplot(df_encode , aes(x = DESEX,fill = DBDX)) +geom_bar()
+
+subplot(style(ggplotly(p1), showlegend = FALSE),
+        style(ggplotly(p2), showlegend = FALSE),
+        ggplotly(p3),nrows = 1,titleX=TRUE)
+
+```
+This helped account for baseline differences that could affect both the likelihood of disease and the outcomes `RUHP6Q`.PSM helped ensure that the comparison between diagnosed and non-diagnosed groups in subsequent NB and ZINB regressions is fair and balanced.Almost 99.9% in the diagnosed group was matched 1-1 to the non-diagnosed group. We then applied negative binomial regression and zero-inflated models, with a detailed summary available in the hidden code section. 
 
 
 ```{r Q1}
 
 # build a PSM based on age, sex, bmi
 #ps_model <- matchit(DBDX ~ DEAGE + BMI +DESEX, data = df, method = "nearest",caliper = 0.2)
-#saveRDS(ps_model, file = "./model/ps_model.rds")
+#saveRDS(ps_model, file = "./model/ps_model_cci.rds")
 ps_model <- readRDS("./model/ps_model.rds")
 # Check balance before and after matching
 summary(ps_model)
@@ -284,7 +295,7 @@ matched_data <- match.data(ps_model)
 nb_m1 <- MASS::glm.nb(RUHP6Q ~ DBDX, data = matched_data)
 summary(nb_m1)
 
-zinp_m1 <-zeroinfl(RUHP6Q~ DBDX*CCI,data= matched_data , dist="negbin") 
+zinp_m1 <-zeroinfl(RUHP6Q~ DBDX,data= matched_data , dist="negbin") 
 summary(zinp_m1)
 ```
 
@@ -296,6 +307,12 @@ As for the Zero-Inflated Negative Binomial model fitted to `RUHP6Q` against `DBD
 
 As the Negative Binomial regression model suggested, diagnosed individuals have around 1.97 times higher rate of hospitalizations in the past 6 months compared to those not diagnosed.This association underscores the healthcare needs and challenges faced by those diagnosed with conditions requiring ongoing treatment or observation.
 
+Reasons why diagnosed patients might have a larger frequency of hospitalizations could include:
+
+1. **Management of the diagnosed condition:** Patients with a diagnosis may require regular hospital visits for treatment or management of their condition.
+2. **Complications:** A diagnosed condition may lead to complications that necessitate frequent hospital stays.
+3. **Monitoring:** Some conditions might require close medical monitoring, possibly in a hospital setting.
+4. **Post-diagnosis care:** Initial hospitalizations might be more frequent as the care protocol is established immediately following diagnosis.
 
 
 # Q2.
