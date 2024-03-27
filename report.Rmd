@@ -23,7 +23,7 @@ The report will discuss three main questions:
 
 * Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent?
 * Compared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens? Furthermore, among Type 1 Diabetes patients, does increased non-adherence, reflected by higher MMAS scores, correlate with a higher frequency of hospitalizations? 
-* For Type2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months?
+* For Type 2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months?
 
 
 <div style="text-align: center;">
@@ -281,7 +281,7 @@ wilcox.test(x,y, alternative = "greater")
 
 To accurately quantify the difference, we plan to construct a regression model. However, prior to this, it's crucial to address an important concern related to demographic characteristics.
 
-Age and BMI are significant risk factors for diabetes. Older age groups often have a higher prevalence of diabetes, and higher BMI is associated with an increased risk of developing type 2 diabetes. Such trend could be observed from the plot below.By including these variables, the model accounts for important risk factors that might influence the probability of being diagnosed with diabetes. Age, BMI, and sex are also potential confounders because they can be associated with both the likelihood of receiving a diagnosis (exposure) and the outcome of interest. If not adjusted for, these variables could bias the results of the study.
+Age and BMI are significant risk factors for diabetes. Older age groups often have a higher prevalence of diabetes, and higher BMI is associated with an increased risk of developing type 2 diabetes. Such trend could be observed from the plot below. Age, BMI, and sex are also potential confounders because they can be associated with both the likelihood of receiving a diagnosis (exposure) and the outcome of interest. If not adjusted for, these variables could bias the results of the study.
 
 
 Therefore, prior to developing the regression model, we constructed a propensity score model utilizing `DEAGE`, `BMI`, and `DESEX` as predictors of `DBDX`. The propensity score model serves to balance these groups and thereby enhance the robustness of the subsequent regression analysis. Remarkably, 99.9% of individuals in the diagnosed group were matched on a 1-1 basis with those in the non-diagnosed group, employing nearest neighbor matching with a caliper of 0.2. A comparison of the two plots reveals that the matching process effectively harmonized the distribution of demographic characteristics across both groups.
@@ -400,7 +400,7 @@ Reasons why diagnosed patients might have a larger frequency of hospitalizations
 
 Patients with Type 1 Diabetes tend to have better medication adherence scores compared to those with Type 2, largely due to the essential nature of insulin therapy for survival and the early onset of the disease, which comes with comprehensive education on disease management. Additionally, the routine of continuous glucose monitoring and insulin administration fosters a disciplined approach to treatment adherence. These factors, combined with the immediate feedback provided by blood glucose levels, help reinforce the critical importance of sticking to the prescribed medication regimen. So naturally, we wanted to know if, in our data, patients with Type 1 Diabetes are more likely to adhere to medication regimens compared to Type 2 patients, as indicated by lower scores on the Medication Adherence Scale (`MMAS`)
 
-We exclusively considered patients with confirmed diagnoses. If we calculated the mean among the two group (a little violation of variable type given `MMAS` was treated as ordinal), excluding the missing values, we noticed that Type1 patients have a slightly larger mean `MMAS` (Type1 = 2.53, Type2 = 2.33). The pie charts depict the distribution of various `MMAS` score categories, indicating a potentially marginal difference between the groups.
+We exclusively considered patients with confirmed diagnoses. If we calculated the mean among the two group (a little violation of variable type given `MMAS` was treated as ordinal), excluding the missing values, we noticed that Type1 patients have a slightly smaller mean `MMAS` (Type1 = 2.53, Type2 = 2.54). The pie charts depict the distribution of various `MMAS` score categories, indicating a potentially marginal difference between the groups.
 
 
 We then employed a chi-square test to investigate potential disparities in the distribution of `MMAS` between individuals with Type1 and Type2 diabetes. With a significance level set at 0.05, the findings indicate no significant discrepancies in `MMAS` distribution among the two diabetic subgroups ($p value =0.5107$, more detail from the hidden trunk).
@@ -478,7 +478,7 @@ According to [the National Institute of Diabetes and Digestive and Kidney Diseas
 
 Given the distinct nature of Type 1 and Type 2 diabetes, it is prudent to develop predictive models separately for each type. Due to the limited sample size available for Type 1 diabetes, our focus was directed solely towards Type 2.
 
-```{r groupby DBTYPE}
+```{r groupby DBTYPE, echo=FALSE}
 
 df |> group_by(DBTYPE) |>summarise( hospitalizations = sum(IFHOS),
                                     non_hospitalizations = n()-sum(IFHOS))
@@ -500,7 +500,7 @@ Variables like `BMI` and `DESEX2` (Female) also contribute to the model, albeit 
 
 It's important to consider the possibility of confounding variables or complex interactions within the dataset that may influence the relationship among predictors and hospital admissions. Further investigation, including additional analyses or exploration of underlying mechanisms, may be necessary to fully understand this association.
 
-```{r lasso}
+```{r lasso, echo=FALSE}
 set.seed(2378)
 source("./function/lasso_regression.R")
 df = df |> mutate(MMAS = factor(MMAS))
@@ -510,12 +510,10 @@ result_lasso_typ2$plot_estimate
 performance_matrix = result_lasso_typ2$performance_matrix 
 ```
 
-
-
 The model's performance is characterized by excellent specificity (`r performance_matrix[which(performance_matrix$Term == "Specificity"),][2]`) 
 indicating almost all negative cases are correctly identified. However, the sensitivity is exceptionally low at `r performance_matrix[which(performance_matrix$Term == "Sensitivity"),][2]`, meaning the model identifies very few positive cases. The accuracy is high ( `r performance_matrix[which(performance_matrix$Term == "Accuracy"),][2]`), which seems impressive, but it is misleading due to the class imbalance reflected in the prevalence rate ( `r performance_matrix[which(performance_matrix$Term == "Prevalence"),][2]`). The Kappa score is low (`r performance_matrix[which(performance_matrix$Term == "Kappa"),][2]`), suggesting that the agreement between the predicted and actual values is only slightly better than chance. The AUC of `r performance_matrix[which(performance_matrix$Term == "AUC"),][2]` indicates a fair ability to distinguish between the classes. These metrics together suggest that while the model is excellent at predicting the negative class, it fails to adequately capture the positive class, likely due to class imbalance.
 
-```{r model performance}
+```{r model performance, echo=FALSE}
 p = performance_matrix|>
   filter(!(Term %in% c('AccuracyLower','AccuracyUpper','AccuracyNull','AccuracyPValue','McnemarPValue'))) |>
   arrange(desc(Value))|>
@@ -536,14 +534,14 @@ ggplotly(p, tooltip = "text")
 
 # Conclusions
 
-**Does diagnosed patients have larger frequency of hospitalizations?**
+1. **Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent?**
 
 Yes. As the Negative Binomial regression model suggested, diagnosed individuals have around 1.97 times higher rate of hospitalizations in the past 6 months compared to those not diagnosed.
 
-**Does Type 1 Diabetes patients have better medication adherence score? For Type 1 Diabetes patients, does higher MMAS lead to higher frequency of hospitalizations?**
+2. **Compared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens? Furthermore, among Type 1 Diabetes patients, does increased non-adherence, reflected by higher MMAS scores, correlate with a higher frequency of hospitalizations?**
 
 Type 1 diabetes patients exhibit a higher mean `MMAS` score relative to those with Type 2; however, this discrepancy is not statistically significant. The `MMAS` score is indicative of medication adherence, with higher scores pointing to greater non-adherence, a factor that could potentially lead to more frequent hospitalizations. Interestingly, an inverse trend is observed at `MMAS` levels 3 and 4, suggesting better adherence may not correspond to fewer hospitalizations. To elucidate this apparent contradiction, further data collection and analysis are required.
 
-**For Type2 DB patients, how to predict the possibility of hospitalizations in 6 months?**
+3. **For Type 2 DB patients, how to predict the possibility of hospitalizations in 6 months?**
 
 In predicting hospitalization among Type 2 diabetes patients, our LASSO model selected `CCI`, `DBIN`, `WPACTIMP`, `BMI`, `VT`, `PCS`, `DESEX`, and `SF` as significant factors. Most of these associations corroborate our expectations and established understanding. The model's performance could be enhanced by incorporating a larger sample of positive instances.
