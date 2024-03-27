@@ -21,8 +21,8 @@ knitr::opts_chunk$set(
 
 The report will discuss three main questions:
 
-* Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent??
-* Comapared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens, as indicated by lower scores on the Medication Adherence Scale (MMAS)? Furthermore, among Type 1 Diabetes patients, does increased non-adherence, reflected by higher MMAS scores, correlate with a higher frequency of hospitalizations? 
+* Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent?
+* Compared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens? Furthermore, among Type 1 Diabetes patients, does increased non-adherence, reflected by higher MMAS scores, correlate with a higher frequency of hospitalizations? 
 * For Type2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months?
 
 
@@ -70,6 +70,10 @@ df = df_raw |>
   mutate(across(c(BP, GH,PF, VT, SF,MMAS), ~factor(., ordered = TRUE))) ##|>
  # mutate(across(c(BP, GH, MH, PF, RE, RP,VT, SF,MMAS), ~factor(., ordered = TRUE))) ##|>
  # mutate(across(c(BP, GH, MH, PF, RE, RP,VT, SF,MMAS), ~factor(.))) 
+```
+
+### Categorical Variables
+```{r, cat, echo=FALSE}
 
 # Detecting continuous and categorical variables
 continuous_vars <- c()
@@ -83,10 +87,6 @@ for(col_name in names(df)) {
     categorical_vars <- c(categorical_vars, col_name)
   }
 }
-```
-
-### Categorical Variables
-```{r, cat}
 # delete zKey```
 
 df |> select(all_of(categorical_vars)) |> 
@@ -97,7 +97,7 @@ df |> select(all_of(categorical_vars)) |>
 ```
 ### Continuous Variables
 
-```{r, con}
+```{r, con, echo=FALSE}
 # delete zKey```
 
 df |> select(all_of(continuous_vars)) |> 
@@ -115,10 +115,10 @@ We created a series of plots to compare the distribution of variables between di
 
 ### Demographic
 
+We generate a new binary variable, `IFHOS`, to denote whether the patient has been hospitalized in the past 6 months. This variable is assigned a value of 1 if the value of `RUHP6Q` is greater than 0, indicating a recent hospitalization, and 0 otherwise.
 We observed that demographic variables exhibit different distribution between the hospitalized and non-hospitalized groups. Notice that for missing values in `BMI`, given the missing rate is relatively small and sample size is large enough, we implemented the missing value with the mean.
 
-```{r start over with data pre processing}
-
+```{r, start over with data pre processing, echo=FALSE}
 # delete zKey
 continuous_vars = continuous_vars[-1]
 
@@ -147,11 +147,7 @@ df_encode = df |>
          DBRX = factor(DBRX, levels = c(0, 1), labels = c("Not Using Oral", "Using Oral")),
          DBIN = factor(DBIN, levels = c(0, 1), labels = c("Not Using Insulin", "Using Insulin")),
          IFHOS = factor(IFHOS,levels = c(0,1), labels = c("Non-Hospitalized","Hospitalized"))) 
-```
 
-We generate a new binary variable, `IFHOS`, to denote whether the patient has been hospitalized in the past 6 months. This variable is assigned a value of 1 if the value of `RUHP6Q` is greater than 0, indicating a recent hospitalization, and 0 otherwise.
-
-```{r ifhos}
 p1 = ggplot(df_encode |> filter(!is.na(BMI)), aes(x = BMI,col = IFHOS)) +geom_density() 
 p2 = ggplot(df_encode , aes(x = DEAGE,col = IFHOS)) +geom_density()
 p3 = ggplot(df_encode , aes(x = DESEX,fill = IFHOS)) +geom_bar()
@@ -168,7 +164,7 @@ We observed that a series of variables related to diabetes diagnosis, type, and 
 
 Approximately 11.1% of the population was diagnosed with diabetes, of which only 6% were classified as Type 1. Regarding medication, all Type 1 patients were found to use both oral medications and insulin. For Type 2 diabetes, three medication combinations were identified: 1) those who used both oral medications and insulin, 2) those who used oral medications only, and 3) those who did not use either oral medications or insulin. The proportions of each category can be visualized in the following chart.
 
-```{r, relationship of disease, type, oral and insulin use}
+```{r, relationship of disease, type, oral and insulin use, echo=FALSE}
 df_encode |>
   count(DBDX, DBTYPE, DBIN, DBRX#,wt = RUHP6Q
         ) |>
@@ -181,7 +177,7 @@ df_encode |>
 `MMAS` is also related to the diagnosis of diabetes, only people who were diagnosed had records; Since it is ordinal data, we opted to fill its missing values with -1 to preserve the original meaning without distortion. 
 
 
-```{r}
+```{r, echo=FALSE}
 p1 = df_encode |> ggplot(aes( x = CCI,col = DBDX)) + geom_density()
 
 p2 = df_encode |> ggplot(aes( x = DBDX, y = CCI,fill = DBDX)) + geom_boxplot()
@@ -196,7 +192,7 @@ subplot(style(ggplotly(p1), showlegend = TRUE),
 
 Given the eight subdomains SF-36 are likely to contribute to `PCS` and `MCS` scores. It's essential to check the correlation pairwise in case of multicollinearity.
 
-```{r}
+```{r, echo=FALSE}
 SF_36 = c("PCS","MCS","PF","RE","RP","SF","VT", "GH" ,"MH","BP")
 
 p1 = df_encode |> ggplot(aes( x = PCS,col = IFHOS)) + geom_density()
@@ -206,7 +202,7 @@ subplot(style(ggplotly(p1), showlegend = TRUE),
 ```
 ### WPACTIMP
 
-```{r, WPACTIMP}
+```{r, WPACTIMP, echo=FALSE}
 p1 = ggplot(df_encode, aes(WPACTIMP, fill = factor(WPACTIMP),
                            text = paste("WPACTIMP",WPACTIMP ,"<br>Count:", ..count..))) + 
   geom_bar() 
@@ -226,7 +222,7 @@ style(ggplotly(p1,tooltip = "text"), showlegend = FALSE)
 We compared `RUHP6Q` values between diagnosed and non-diagnosed groups via a bar plot, noticing many zeros, indicating overdispersion and the potential need for specialized models. The diagnosed group showed higher means and standard errors, as expected.
 
 
-```{r,RUHP6Q}
+```{r,RUHP6Q, echo=FALSE}
 
 # for annotation only 
 df_summary = df_encode |> group_by(DBDX) |> 
@@ -259,21 +255,23 @@ p1_plotly
 
 Two pairs of variables, `MH` & `MCS`, `RP` & `RPS`, exhibit a high correlation (greater than 0.8), suggesting that one variable from each correlated pair should be considered for exclusion to avoid multicollinearity.
 
-```{r, corrplot}
+```{r, corrplot, echo=FALSE}
 corrplot::corrplot(cor(df |> select(any_of(continuous_vars))), "number")
 #df = df |>select(-RP)
 ```
 
 # Q1. 
 
-**Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent?**
+<span style="font-size: 18px;">**Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent?**</span>
 
 Based on the information provided in the plot:
 
 - The 'Diagnosed' group (`DBDX` = 1) has a mean value of `r df_summary[2,2]` with a standard deviation (SD) of `r df_summary[2,3]`.
 - The 'Not Diagnosed' group (`DBDX` = 0) has a mean value of `r df_summary[1,2]` with an SD of `r df_summary[1,3]`.
 
-The higher mean in the 'Diagnosed' group suggests that, on average, diagnosed patients have a higher frequency of hospitalizations over six months compared to non-diagnosed patients.Also, the Wilcoxon rank sum test shows there is a statistically significant difference in the `RUHP6Q` variable between the two groups, with the median value of `RUHP6Q` being significantly higher in the diagnosed group than in the non-diagnosed group($\alpha = 0.05,\ W =36532880,\ p-value < 2.2e-16$) . Moreover, the larger standard deviation in the 'Diagnosed' group indicates more variability in hospitalization frequency among diagnosed patients.
+The higher mean in the 'Diagnosed' group suggests that, on average, diagnosed patients have a higher frequency of hospitalizations over six months compared to non-diagnosed patients. Moreover, the larger standard deviation in the 'Diagnosed' group indicates more variability in hospitalization frequency among diagnosed patients.
+
+Also, the Wilcoxon rank sum test shows there is a statistically significant difference in the `RUHP6Q` variable between the two groups, with the median value of `RUHP6Q` being significantly higher in the diagnosed group than in the non-diagnosed group ($\alpha = 0.05,\ W =36532880,\ p-value < 2.2e-16$). 
 
 ```{r, q1 wilcox}
 x = df |> filter(DBDX == 1) |> select(RUHP6Q) |> pull()
@@ -283,12 +281,36 @@ wilcox.test(x,y, alternative = "greater")
 
 To accurately quantify the difference, we plan to construct a regression model. However, prior to this, it's crucial to address an important concern related to demographic characteristics.
 
-Age and BMI are significant risk factors for diabetes. Older age groups often have a higher prevalence of diabetes, and higher BMI is associated with an increased risk of developing type 2 diabetes. Such trend could be observed from the plot below.By including these variables, the model accounts for important risk factors that might influence the probability of being diagnosed with diabetes. Age, BMI, and sex are also potential confounders because they can be associated with both the likelihood of receiving a diagnosis (exposure) and the outcome of interest. If not adjusted for, these variables could bias the results of the study. Therefore, prior to developing the regression model, we constructed a propensity score model utilizing `DEAGE`, `BMI`, and `DESEX` as predictors of `DBDX`. The propensity score model serves to balance these groups and thereby enhance the robustness of the subsequent regression analysis.
+Age and BMI are significant risk factors for diabetes. Older age groups often have a higher prevalence of diabetes, and higher BMI is associated with an increased risk of developing type 2 diabetes. Such trend could be observed from the plot below.By including these variables, the model accounts for important risk factors that might influence the probability of being diagnosed with diabetes. Age, BMI, and sex are also potential confounders because they can be associated with both the likelihood of receiving a diagnosis (exposure) and the outcome of interest. If not adjusted for, these variables could bias the results of the study.
 
-```{r, demographic by diagnos}
+
+Therefore, prior to developing the regression model, we constructed a propensity score model utilizing `DEAGE`, `BMI`, and `DESEX` as predictors of `DBDX`. The propensity score model serves to balance these groups and thereby enhance the robustness of the subsequent regression analysis. Remarkably, 99.9% of individuals in the diagnosed group were matched on a 1-1 basis with those in the non-diagnosed group, employing nearest neighbor matching with a caliper of 0.2. A comparison of the two plots reveals that the matching process effectively harmonized the distribution of demographic characteristics across both groups.
+
+```{r, demographic by diagnos, echo=FALSE}
 p1 = ggplot(df_encode |> filter(!is.na(BMI)), aes(x = BMI,col = DBDX)) +geom_density()
 p2 = ggplot(df_encode , aes(x = DEAGE,col = DBDX)) +geom_density()
 p3 = ggplot(df_encode , aes(x = DESEX,fill = DBDX)) +geom_bar()
+
+subplot(style(ggplotly(p1), showlegend = FALSE),
+        style(ggplotly(p2), showlegend = FALSE),
+        ggplotly(p3),nrows = 1,titleX=TRUE)
+```
+```{r, psm}
+# build a PSM based on age, sex, bmi
+#ps_model <- matchit(DBDX ~ DEAGE + BMI +DESEX, data = df, method = "nearest",caliper = 0.2)
+#saveRDS(ps_model, file = "./model/ps_model_cci.rds")
+ps_model <- readRDS("./model/ps_model.rds")
+# Check balance before and after matching
+summary(ps_model)
+```
+```{r, demographic by diagnos after psm, echo=FALSE}
+# Extract the matched data
+matched_data <- match.data(ps_model) |>
+  mutate(DBDX = factor(DBDX, levels = c(0, 1), labels = c("Not Diagnosed", "Diagnosed")))
+
+p1 = ggplot(matched_data |> filter(!is.na(BMI)), aes(x = BMI,col = DBDX)) +geom_density()
+p2 = ggplot(matched_data , aes(x = DEAGE,col = DBDX)) +geom_density()
+p3 = ggplot(matched_data , aes(x = DESEX,fill = DBDX)) +geom_bar()
 
 subplot(style(ggplotly(p1), showlegend = FALSE),
         style(ggplotly(p2), showlegend = FALSE),
@@ -297,35 +319,72 @@ subplot(style(ggplotly(p1), showlegend = FALSE),
 ```
 
 
-This helped account for baseline differences that could affect both the likelihood of disease and the outcomes `RUHP6Q`.PSM helped ensure that the comparison between diagnosed and non-diagnosed groups in subsequent NB and ZINB regressions is fair and balanced.Almost 99.9% in the diagnosed group was matched 1-1 to the non-diagnosed group. We then applied negative binomial regression and zero-inflated models, with a detailed summary available in the hidden code section. 
+
+We then applied negative binomial regression and zero-inflated models, with a detailed summary available in the hidden code section. 
 
 
 ```{r Q1}
-
-# build a PSM based on age, sex, bmi
-#ps_model <- matchit(DBDX ~ DEAGE + BMI +DESEX, data = df, method = "nearest",caliper = 0.2)
-#saveRDS(ps_model, file = "./model/ps_model_cci.rds")
-ps_model <- readRDS("./model/ps_model.rds")
-# Check balance before and after matching
-summary(ps_model)
-
-# Extract the matched data
-matched_data <- match.data(ps_model)
-
 nb_m1 <- MASS::glm.nb(RUHP6Q ~ DBDX, data = matched_data)
 summary(nb_m1)
 
 zinp_m1 <-zeroinfl(RUHP6Q~ DBDX,data= matched_data , dist="negbin") 
 summary(zinp_m1)
 ```
+```{r results-table, echo=FALSE, results='asis'}
+library(knitr)
+
+# Model summary in a data frame for display
+model_summary <- data.frame(
+  Term = c("(Intercept)", "DBDXDiagnosed"),
+  Estimate = c(-2.2347, 0.6779),
+  `Std Error` = c(0.0450, 0.0591),
+  `z value` = c(-49.68, 11.47),
+  `p value` = c("<2e-16", "<2e-16")
+)
+
+# Print the table
+kable(model_summary, caption = "Summary of Negative Binomial Regression Model", align = 'c', format = "markdown")
+```
 
 
 The Negative Binomial regression analysis reveals a significant difference in `RUHP6Q` between groups defined by `DBDX`. Specifically, the `DBDX1` coefficient is positive and significant, indicating that being in the diagnosed group is associated with a higher count of `RUHP6Q`, compared to the non-diagnosed group. The model's fit is underscored by a substantial difference between the null and residual deviance, and a relatively low theta suggests overdispersion. The coefficient for `DBDX1` suggests that diagnosed individuals have a \( e^{0.6779} \approx 1.97 \) times higher rate of hospitalizations in the past 6 months compared to those not diagnosed, all else being equal. This indicates a significant impact of diagnosis on hospitalization frequency.
 
+```{r zero-infl-model-table, echo=FALSE, results='asis'}
+# Creating a data frame for the count model coefficients
+count_model <- data.frame(
+  Term = c("(Intercept)", "DBDXDiagnosed", "Log(theta)"),
+  Estimate = c(-2.1157, 0.5589, -1.9788),
+  `Std Error` = c(0.0973, 0.1045, 0.0551),
+  `z value` = c(-21.735, 5.351, -35.944),
+  `p value` = c("<2e-16", "8.75e-08", "<2e-16")
+)
+
+# Creating a data frame for the zero-inflation model coefficients
+zero_inflation_model <- data.frame(
+  Term = c("(Intercept)", "DBDXDiagnosed"),
+  Estimate = c(-2.068, -9.019),
+  `Std Error` = c(0.766, 54.694),
+  `z value` = c(-2.700, -0.165),
+  `p value` = c("0.0069", "0.8690")
+)
+
+# Combine the two sets of coefficients into one data frame for the table
+model_summary <- rbind(
+  count_model,
+  zero_inflation_model
+)
+
+# Add a column to specify which part of the model each row refers to
+model_summary$Model_Part <- c("Count Model", "Count Model", "Count Model", "Zero-Inflation Model", "Zero-Inflation Model")
+
+# Print the table
+kable(model_summary, caption = "Summary of Zero-Inflated Negative Binomial Model", align = 'c', format = "markdown")
+```
 
 As for the Zero-Inflated Negative Binomial model fitted to `RUHP6Q` against `DBDX`. In the count model, `DBDX1` has a positive coefficient, indicating an association between being in the `DBDX1` group and an increase in the `RUHP6Q` count. The significant negative coefficient for `Log(theta)` suggests overdispersion in the data. The zero-inflation part's intercept is significant, suggesting different levels of zero counts not explained by the count model alone, but the `DBDX1` effect is not significant here, indicating no clear difference in zero-inflation between `DBDX` groups.
 
-Given the zero-inflation part for `DBDX1` is not significant and zero-inflated models offer relative a nuanced understanding. We stick with the result from Negative Binomial regression model. As it suggested, diagnosed individuals have around 1.97 times higher rate of hospitalizations in the past 6 months compared to those not diagnosed.This association underscores the healthcare needs and challenges faced by those diagnosed with conditions requiring ongoing treatment or observation.
+Given the zero-inflation part for `DBDX1` is not significant and zero-inflated models offer relative a nuanced understanding. We stick with the result from Negative Binomial regression model. As it suggested, diagnosed individuals have around 1.97 times higher rate of hospitalizations in the past 6 months compared to those not diagnosed.
+
 
 Reasons why diagnosed patients might have a larger frequency of hospitalizations could include:
 
@@ -337,25 +396,20 @@ Reasons why diagnosed patients might have a larger frequency of hospitalizations
 
 # Q2.
 
-**Comapared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens, as indicated by lower scores on the Medication Adherence Scale (MMAS)?**
+<span style="font-size: 18px;">**Compared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens?**<span>
 
-Patients with Type 1 Diabetes tend to have better medication adherence scores compared to those with Type 2, largely due to the essential nature of insulin therapy for survival and the early onset of the disease, which comes with comprehensive education on disease management. Additionally, the routine of continuous glucose monitoring and insulin administration fosters a disciplined approach to treatment adherence. These factors, combined with the immediate feedback provided by blood glucose levels, help reinforce the critical importance of sticking to the prescribed medication regimen. So naturally, we wanted to know if patients with Type 1 Diabetes are more likely to adhere to medication regimens compared to Type 2 patients, as indicated by lower scores on the Medication Adherence Scale (MMAS)
+Patients with Type 1 Diabetes tend to have better medication adherence scores compared to those with Type 2, largely due to the essential nature of insulin therapy for survival and the early onset of the disease, which comes with comprehensive education on disease management. Additionally, the routine of continuous glucose monitoring and insulin administration fosters a disciplined approach to treatment adherence. These factors, combined with the immediate feedback provided by blood glucose levels, help reinforce the critical importance of sticking to the prescribed medication regimen. So naturally, we wanted to know if, in our data, patients with Type 1 Diabetes are more likely to adhere to medication regimens compared to Type 2 patients, as indicated by lower scores on the Medication Adherence Scale (`MMAS`)
 
-We exclusively considered patients with confirmed diagnoses and employed a chi-square test to investigate potential disparities in the distribution of Morisky Medication Adherence Scores (`MMAS`) between individuals with Type1 and Type2 diabetes. The analysis revealed statistically significant differences in `MMAS` distribution between Type1 and Type2 diabetes patients (see the results provided). With a significance level set at 0.05, the findings indicate no significant discrepancies in `MMAS` distribution among the two diabetic subgroups (p value 0.5107).But, if we calculated the mean among the two group, excluding the missing values, we noticed that Type1 patients have larger MMAS(Type1 2.53, Type2 2.33), that is greater non-adherence.
+We exclusively considered patients with confirmed diagnoses. If we calculated the mean among the two group (a little violation of variable type given `MMAS` was treated as ordinal), excluding the missing values, we noticed that Type1 patients have a slightly larger mean `MMAS` (Type1 = 2.53, Type2 = 2.33). The pie charts depict the distribution of various `MMAS` score categories, indicating a potentially marginal difference between the groups.
 
-```{r Q2 chisq}
+
+We then employed a chi-square test to investigate potential disparities in the distribution of `MMAS` between individuals with Type1 and Type2 diabetes. With a significance level set at 0.05, the findings indicate no significant discrepancies in `MMAS` distribution among the two diabetic subgroups ($p value =0.5107$, more detail from the hidden trunk).
+
+
+```{r Q2 plot, echo=FALSE}
 df_db = df |> filter(DBTYPE!="0" & MMAS != '-1') 
-chisq.test(df_db[["DBTYPE"]], df_db[['MMAS']])
-```
-
-The pie charts further illustrate the there might be little difference between the group.
-
-```{r Q2 plot}
-df|> mutate(MMAS = as.numeric(MMAS))|> 
-  filter(MMAS > -1 ) |>
-  group_by(DBTYPE) |> summarise(mean(MMAS))
-
 df_db_group = df_db|> group_by(DBTYPE,MMAS) |> summarise( cnt =  n())
+
 plot_ly()|>
   add_pie(
     data = df_db_group |> filter(DBTYPE == "1"), labels = ~MMAS, values = ~cnt,
@@ -379,28 +433,46 @@ plot_ly()|>
   config(displayModeBar = FALSE) 
 ```
 
-**For Type 1 Diabetes patients, does higher MMAS lead to higher frequency of hospitalizations?**
+```{r Q2 chisq}
+chisq.test(df_db[["DBTYPE"]], df_db[['MMAS']])
+```
+
+<span style="font-size: 18px;">**For Type 1 Diabetes patients, does higher MMAS lead to higher frequency of hospitalizations?**<span>
 
 
-Specifically focusing on Type 1 diabetes patients, we constructed a negative binomial regression model. Given that the Morisky Medication Adherence Score (`MMAS`) variable only takes 5 unique values, we treated it as categorical data, resulting in a slightly complex interpretation. Comparing patients with `MMAS` = 0 to those with `MMAS` = 1,2 we found that the former group had approximately \( e^{0.4924} \approx 1.64 \) times higher rates of hospitalizations in the past 6 months, while the latter group had approximately \( e^{0.1285} \approx 1.14 \) times higher rates. However, for higher levels of `MMAS` (`MMAS`= 3,4), they exhibited the opposite effect, suggesting potentially confounding factors such as limited sample size.
+Specifically focusing on Type 1 diabetes patients, we constructed a negative binomial regression model. Given that the Morisky Medication Adherence Score (`MMAS`) variable only takes 5 unique values, we treated it as categorical data, resulting in a slightly complex interpretation. Comparing patients with `MMAS` = 0 to those with `MMAS` = 1,2 we found that the former group had approximately \( e^{0.4924} \approx 1.64 \) times higher rates of hospitalizations in the past 6 months, while the latter group had approximately \( e^{0.1285} \approx 1.14 \) times higher rates. However, for higher levels of `MMAS` (`MMAS`= 3,4), they exhibited the opposite effect.
 
+```{r, Q2 nb}
+nb_m2 <- MASS::glm.nb(RUHP6Q ~ factor(MMAS), data = df_db |> filter(DBTYPE == 1))
+summary(nb_m2)
+```
+
+```{r model-summary-table, echo=FALSE, results='asis'}
+library(knitr)
+
+# Create a data frame with the model summary results
+model_summary <- data.frame(
+  Term = c("(Intercept)", "MMAS_1", "MMAS_2", "MMAS_3", "MMAS_4"),
+  Estimate = c(-1.3717, 0.4924, 0.1285, -1.4009, -0.0146),
+  `Std Error` = c(0.1733, 0.3340, 0.4654, 1.1915, 1.6090),
+  `z value` = c(-7.916, 1.474, 0.276, -1.176, -0.009),
+  `p value` = c("2.45e-15", "0.140", "0.783", "0.240", "0.993")
+)
+
+# Print the table using knitr::kable
+knitr::kable(model_summary, caption = "Negative Binomial Regression Model Summary", align = 'c')
+```
 
 The statement "higher levels of `MMAS` lead to lower rates of hospitalization" might seem counterintuitive, especially given the expectation that better medication adherence (lower `MMAS` scores) should lead to better health outcomes and, consequently, lower rates of hospitalization. However, several factors could explain this apparent contradiction:
 
-*Confounding Variables*: There might be confounding variables that are not accounted for in the analysis. These variables could influence both `MMAS` and hospitalization rates simultaneously, leading to a spurious association between `MMAS` and hospitalization.
+1.**Confounding Variables**: There might be confounding variables that are not accounted for in the analysis. These variables could influence both `MMAS` and hospitalization rates simultaneously, leading to a spurious association between `MMAS` and hospitalization.
 
-*Reverse Causality*: It's possible that the relationship between `MMAS` and hospitalization is bidirectional. In other words, not only does medication adherence affect hospitalization rates, but hospitalization experiences could also influence future medication adherence. For example, individuals who have experienced frequent hospitalizations may become more vigilant about medication adherence, resulting in lower `MMAS` scores.
-
-
-```{r, Q2 nb}
-nb_m2 <- MASS::glm.nb(RUHP6Q ~ factor(MMAS), data = df |> filter(DBTYPE == 1 ))
-summary(nb_m2)
-```
+2.**Reverse Causality**: It's possible that the relationship between `MMAS` and hospitalization is bidirectional. In other words, not only does medication adherence affect hospitalization rates, but hospitalization experiences could also influence future medication adherence. For example, individuals who have experienced frequent hospitalizations may become more vigilant about medication adherence, resulting in lower `MMAS` scores.
 
 
 # Q3.
 
-**For Type2 DB patients, how to predict the possibility of hospitalizations in 6 months?**
+<span style="font-size: 18px;">**For Type2 DB patients, how to predict the possibility of hospitalizations in 6 months?**<span>
 
 According to [the National Institute of Diabetes and Digestive and Kidney Disease](https://www.niddk.nih.gov/health-information/diabetes/overview/symptoms-causes), the causes of Type 1 and Type 2 diabetes are quite distinct. Type 1 diabetes is believed to occur when the immune system attacks and destroys insulin-producing beta cells in the pancreas, with genetics and environmental factors like viruses potentially triggering this autoimmune response. Type 2 diabetes is primarily caused by lifestyle factors and genetics, including being overweight, physically inactive, and having insulin resistance. Obesity and physical inactivity increase the risk, and the disease often runs in families, being more common in certain racial/ethnic groups. Also, Type 1 is an autoimmune condition with onset typically in younger individuals, requiring insulin management from the start. Type 2, more prevalent and influenced by lifestyle and genetics, usually appears in adults but is increasingly found in younger populations due to lifestyle factors. Management may start with lifestyle changes and medication, with insulin needed as the condition progresses. 
 

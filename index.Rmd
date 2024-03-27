@@ -6,17 +6,17 @@
 </div>
 
 <div class="textbox">
-  <p>Hello, I'm Ada(Yumeng) Qi, a first-year biostatistics student at Columbia University. I'm very grateful for the opportunity to interview with Oracle. I've developed a website using R Markdown, leveraging its interactive functionalities to enhance user engagement and accessibility. Thank you for considering my application.</p>
+  <p>Hello, I'm <a href="about.html">Ada(Yumeng) Qi</a>, a first-year biostatistics student at Columbia University. I'm very grateful for the opportunity to interview with Oracle. I've developed a website using R Markdown, leveraging its interactive functionalities to enhance user engagement and accessibility. Thank you for considering my application.</p>
 </div>
 
 
 <div class="textbox">
   <p>In this exploratory <a href="report.html">study</a>, we aim to investigate the frequency of hospitalizations over the past six months and explore potential associations with demographic factors, diabetes-related indicators, quality of life measures, and other health-related variables.</p>
 
-  <p>Main Research Questions:</p>
+  <p>**Main Research Questions:**</p>
   <ul>
-    <li>Does diagnosed patients have larger frequency of hospitalizations over six months?(PSM,NB regression, ZINB)</li>
-    <li>Are patients with Type 1 Diabetes more likely to adhere to medication regimens, as indicated by lower scores on the Medication Adherence Scale (MMAS)? Furthermore, among Type 1 Diabetes patients, does increased non-adherence, reflected by higher MMAS scores, correlate with a higher frequency of hospitalizations? (contingency table chi-square test, ZINB) </li>
+    <li>Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent?(PSM,NB regression, ZINB)</li>
+    <li>Compared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens? For Type 1 Diabetes patients, does higher MMAS lead to higher frequency of hospitalizations? (contingency table chi-square test, ZINB) </li>
     <li>For Type2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months? (LASSO)</li>
   </ul>
 </div>
