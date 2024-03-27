@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 The report will discuss three main questions:
 
 * Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent?
-* Compared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens? Furthermore, among Type 1 Diabetes patients, does increased non-adherence, reflected by higher MMAS scores, correlate with a higher frequency of hospitalizations? 
+* Compared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens? Furthermore, among Type 1 Diabetes patients, does increased non-adherence correlate with a higher frequency of hospitalizations? 
 * For Type 2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months?
 
 
@@ -401,7 +401,7 @@ Reasons why diagnosed patients might have a larger frequency of hospitalizations
 
 # Q2.
 
-<span style="font-size: 18px;">**Compared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens?**<span>
+<span style="font-size: 18px;">**Furthermore, among Type 1 Diabetes patients, does increased non-adherence correlate with a higher frequency of hospitalizations?**<span>
 
 Patients with Type 1 Diabetes tend to have better medication adherence scores compared to those with Type 2, largely due to the essential nature of insulin therapy for survival and the early onset of the disease, which comes with comprehensive education on disease management. Additionally, the routine of continuous glucose monitoring and insulin administration fosters a disciplined approach to treatment adherence. These factors, combined with the immediate feedback provided by blood glucose levels, help reinforce the critical importance of sticking to the prescribed medication regimen. So naturally, we wanted to know if, in our data, patients with Type 1 Diabetes are more likely to adhere to medication regimens compared to Type 2 patients, as indicated by lower scores on the Medication Adherence Scale (`MMAS`)
 
