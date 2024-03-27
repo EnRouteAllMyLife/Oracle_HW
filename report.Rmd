@@ -204,6 +204,23 @@ p2 = df_encode |> ggplot(aes( x = MCS,col = IFHOS)) + geom_density()
 subplot(style(ggplotly(p1), showlegend = TRUE),
         style(ggplotly(p2), showlegend = FALSE),titleX=TRUE)
 ```
+### WPACTIMP
+
+```{r, WPACTIMP}
+p1 = ggplot(df_encode, aes(WPACTIMP, fill = factor(WPACTIMP),
+                           text = paste("WPACTIMP",WPACTIMP ,"<br>Count:", ..count..))) + 
+  geom_bar() 
+
+p1 = df_encode |> group_by(WPACTIMP) |> 
+  summarise(cnt =n()) |>
+  ggplot(aes(x= WPACTIMP, y = cnt, fill = factor(WPACTIMP),
+            text = paste("WPACTIMP",WPACTIMP ,
+                         "<br>Count:", cnt))) + 
+  geom_bar(stat = "identity",position = "dodge")
+
+style(ggplotly(p1,tooltip = "text"), showlegend = FALSE)
+```
+
 ### RUHP6Q(the outcome)
 
 We compared `RUHP6Q` values between diagnosed and non-diagnosed groups via a bar plot, noticing many zeros, indicating overdispersion and the potential need for specialized models. The diagnosed group showed higher means and standard errors, as expected.
@@ -236,6 +253,7 @@ p1 = df_encode |> group_by(RUHP6Q,DBDX) |>
 p1_plotly = ggplotly(p1,tooltip = "text")
 p1_plotly
 ```
+
 
 ### Correlation 
 
