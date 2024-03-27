@@ -151,10 +151,11 @@ df_encode = df |>
 p1 = ggplot(df_encode |> filter(!is.na(BMI)), aes(x = BMI,col = IFHOS)) +geom_density() 
 p2 = ggplot(df_encode , aes(x = DEAGE,col = IFHOS)) +geom_density()
 p3 = ggplot(df_encode , aes(x = DESEX,fill = IFHOS)) +geom_bar()
-
-subplot(style(ggplotly(p1), showlegend = FALSE),
+combined_plot = subplot(style(ggplotly(p1), showlegend = FALSE),
         style(ggplotly(p2), showlegend = FALSE),
         ggplotly(p3),nrows = 1,titleX=TRUE)
+layout(combined_plot, legend = list(orientation = 'h', x = 0.5, y = 1.2,
+                                    xanchor = 'center'))
 ```
 
 
@@ -176,19 +177,19 @@ df_encode |>
 
 `MMAS` is also related to the diagnosis of diabetes, only people who were diagnosed had records; Since it is ordinal data, we opted to fill its missing values with -1 to preserve the original meaning without distortion. 
 
-
 ```{r, echo=FALSE}
-p1 = df_encode |> filter(MMAS !='-1') |> ggplot(aes( x = MMAS, fill = MMAS)) + geom_bar()
-
+p1 = df_encode |> filter(MMAS !='-1') |> ggplot(aes(x = MMAS, fill = MMAS)) + geom_bar()
 style(ggplotly(p1), showlegend = FALSE)
 ```
 
 ```{r, echo=FALSE}
-p1 = df_encode |> ggplot(aes( x = CCI,col = DBDX)) + geom_density()
-p2 = df_encode |> ggplot(aes( x = DBDX, y = CCI,fill = DBDX)) + geom_boxplot()
+p1 = df_encode |> ggplot(aes( x = CCI,col = IFHOS)) + geom_density()
+p2 = df_encode |> ggplot(aes( x = IFHOS, y = CCI,fill = IFHOS)) + geom_boxplot()
 
-subplot(style(ggplotly(p1), showlegend = TRUE),
+combined_plot = subplot(style(ggplotly(p1), showlegend = TRUE),
         style(ggplotly(p2), showlegend = FALSE),titleX=TRUE)
+layout(combined_plot, legend = list(orientation = 'h', x = 0.5, y = 1.2,
+                                    xanchor = 'center'))
 ```
 
 ### SF-36
@@ -197,13 +198,47 @@ subplot(style(ggplotly(p1), showlegend = TRUE),
 
 Given the eight subdomains SF-36 are likely to contribute to `PCS` and `MCS` scores. It's essential to check the correlation pairwise in case of multicollinearity.
 
-```{r, echo=FALSE}
-SF_36 = c("PCS","MCS","PF","RE","RP","SF","VT", "GH" ,"MH","BP")
+```{r, PCS & MCS, echo=FALSE}
+#SF_36 = c("PCS","MCS","PF","RE","RP","SF","VT", "GH" ,"MH","BP")
 
 p1 = df_encode |> ggplot(aes( x = PCS,col = IFHOS)) + geom_density()
 p2 = df_encode |> ggplot(aes( x = MCS,col = IFHOS)) + geom_density()
-subplot(style(ggplotly(p1), showlegend = TRUE),
+combined_plot = subplot(style(ggplotly(p1), showlegend = TRUE),
         style(ggplotly(p2), showlegend = FALSE),titleX=TRUE)
+layout(combined_plot, legend = list(orientation = 'h', x = 0.5, y = 1.2,
+                                    xanchor = 'center'))
+```
+
+```{r, SF-36, echo=FALSE}
+#SF_36 = c("PCS","MCS","PF","RE","RP","SF","VT", "GH" ,"MH","BP")
+
+p1 = df_encode |> ggplot(aes( x = BP,fill = IFHOS)) + geom_bar()
+p2 = df_encode |> ggplot(aes( x = GH,fill = IFHOS)) + geom_bar()
+p3 = df_encode |> ggplot(aes( x = VT,fill = IFHOS)) + geom_bar()
+p4 = df_encode |> ggplot(aes( x = SF,fill = IFHOS)) + geom_bar()
+
+combined_plot = subplot(style(ggplotly(p1), showlegend = FALSE),
+        style(ggplotly(p2), showlegend = FALSE),
+        style(ggplotly(p3), showlegend = FALSE),
+        style(ggplotly(p4), showlegend = FALSE),
+        titleX=TRUE)
+layout(combined_plot, legend = list(orientation = 'h', x = 0.5, y = 1.2,
+                                    xanchor = 'center'))
+
+
+p1 = df_encode |> ggplot(aes( x = MH,fill = IFHOS)) + geom_bar()
+p2 = df_encode |> ggplot(aes( x = RE,fill = IFHOS)) + geom_bar()
+p3 = df_encode |> ggplot(aes( x = RP,fill = IFHOS)) + geom_bar()
+p4 = df_encode |> ggplot(aes( x = PF,fill = IFHOS)) + geom_bar()
+
+combined_plot = subplot(style(ggplotly(p1), showlegend = FALSE),
+        style(ggplotly(p2), showlegend = FALSE),
+        style(ggplotly(p3), showlegend = FALSE),
+        style(ggplotly(p4), showlegend = FALSE),
+        titleX=TRUE)
+layout(combined_plot, legend = list(orientation = 'h', x = 0.5, y = 1.2,
+                                    xanchor = 'center'))
+
 ```
 ### WPACTIMP
 
@@ -261,7 +296,8 @@ p1_plotly
 Two pairs of variables, `MH` & `MCS`, `RP` & `RPS`, exhibit a high correlation (greater than 0.8), suggesting that one variable from each correlated pair should be considered for exclusion to avoid multicollinearity.
 
 ```{r, corrplot, echo=FALSE}
-corrplot::corrplot(cor(df |> select(any_of(continuous_vars))), "number")
+corrplot::corrplot(cor(df |> select(any_of(continuous_vars))), 
+                   "number",tl.col="black",number.cex=0.8)
 #df = df |>select(-RP)
 ```
 
