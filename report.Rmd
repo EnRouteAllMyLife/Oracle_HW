@@ -178,8 +178,13 @@ df_encode |>
 
 
 ```{r, echo=FALSE}
-p1 = df_encode |> ggplot(aes( x = CCI,col = DBDX)) + geom_density()
+p1 = df_encode |> filter(MMAS !='-1') |> ggplot(aes( x = MMAS, fill = MMAS)) + geom_bar()
 
+style(ggplotly(p1), showlegend = FALSE)
+```
+
+```{r, echo=FALSE}
+p1 = df_encode |> ggplot(aes( x = CCI,col = DBDX)) + geom_density()
 p2 = df_encode |> ggplot(aes( x = DBDX, y = CCI,fill = DBDX)) + geom_boxplot()
 
 subplot(style(ggplotly(p1), showlegend = TRUE),
