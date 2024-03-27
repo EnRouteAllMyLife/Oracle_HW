@@ -2,7 +2,7 @@
 ---
 ---
 <div class="title-box">
-  <h1>Oracle Homework Assignment </h1>
+  <h1>Oracle Assignment </h1>
 </div>
 
 <div class="textbox">
