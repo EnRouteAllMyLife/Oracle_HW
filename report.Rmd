@@ -472,7 +472,7 @@ The statement "higher levels of `MMAS` lead to lower rates of hospitalization" m
 
 # Q3.
 
-<span style="font-size: 18px;">**For Type2 DB patients, how to predict the possibility of hospitalizations in 6 months?**<span>
+<span style="font-size: 18px;">**For Type 2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months?**<span>
 
 According to [the National Institute of Diabetes and Digestive and Kidney Disease](https://www.niddk.nih.gov/health-information/diabetes/overview/symptoms-causes), the causes of Type 1 and Type 2 diabetes are quite distinct. Type 1 diabetes is believed to occur when the immune system attacks and destroys insulin-producing beta cells in the pancreas, with genetics and environmental factors like viruses potentially triggering this autoimmune response. Type 2 diabetes is primarily caused by lifestyle factors and genetics, including being overweight, physically inactive, and having insulin resistance. Obesity and physical inactivity increase the risk, and the disease often runs in families, being more common in certain racial/ethnic groups. Also, Type 1 is an autoimmune condition with onset typically in younger individuals, requiring insulin management from the start. Type 2, more prevalent and influenced by lifestyle and genetics, usually appears in adults but is increasingly found in younger populations due to lifestyle factors. Management may start with lifestyle changes and medication, with insulin needed as the condition progresses. 
 
@@ -542,6 +542,6 @@ Yes. As the Negative Binomial regression model suggested, diagnosed individuals 
 
 Type 1 diabetes patients exhibit a higher mean `MMAS` score relative to those with Type 2; however, this discrepancy is not statistically significant. The `MMAS` score is indicative of medication adherence, with higher scores pointing to greater non-adherence, a factor that could potentially lead to more frequent hospitalizations. Interestingly, an inverse trend is observed at `MMAS` levels 3 and 4, suggesting better adherence may not correspond to fewer hospitalizations. To elucidate this apparent contradiction, further data collection and analysis are required.
 
-3. **For Type 2 DB patients, how to predict the possibility of hospitalizations in 6 months?**
+3. **For Type 2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months?**
 
 In predicting hospitalization among Type 2 diabetes patients, our LASSO model selected `CCI`, `DBIN`, `WPACTIMP`, `BMI`, `VT`, `PCS`, `DESEX`, and `SF` as significant factors. Most of these associations corroborate our expectations and established understanding. The model's performance could be enhanced by incorporating a larger sample of positive instances.

@@ -17,7 +17,7 @@
   <ul>
     <li>Do diagnosed patients experience a higher frequency of hospitalizations over a six-month period? If so, to what extent?(PSM,NB regression, ZINB)</li>
     <li>Compared to Type 2 Diabetes, are patients with Type 1 Diabetes more likely to adhere to medication regimens? For Type 1 Diabetes patients, does higher MMAS lead to higher frequency of hospitalizations? (contingency table chi-square test, ZINB) </li>
-    <li>For Type2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months? (LASSO)</li>
+    <li>For Type 2 Diabetes patients, how to predict the possibility of hospitalizations in 6 months? (LASSO)</li>
   </ul>
 </div>
 
