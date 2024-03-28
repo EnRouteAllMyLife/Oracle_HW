@@ -175,22 +175,19 @@ df_encode |>
 
 ### MMAS & CCI
 
-`MMAS` is also related to the diagnosis of diabetes, only people who were diagnosed had records; Since it is ordinal data, we opted to fill its missing values with -1 to preserve the original meaning without distortion. 
+Morisky medication adherence score (`MMAS`) is also related to the diagnosis of diabetes, only people who were diagnosed had records; Since it is ordinal data, we opted to fill its missing values with -1 to preserve the original meaning without distortion. 
+
+Charlson comorbidity index (`CCI`) , the higher scores indicate greater comorbid burden.
 
 ```{r, echo=FALSE}
-p1 = df_encode |> filter(MMAS !='-1') |> ggplot(aes(x = MMAS, fill = MMAS)) + geom_bar()
+p1 = df_encode |> filter(MMAS !='-1') |> ggplot(aes(x = MMAS, fill = MMAS)) + geom_bar()+facet_wrap(vars(IFHOS))
+
+p2 = df_encode |> ggplot(aes(x = CCI, fill = factor(CCI))) + geom_bar() +facet_wrap(vars(IFHOS))
+
 style(ggplotly(p1), showlegend = FALSE)
+style(ggplotly(p2), showlegend = FALSE)
 ```
 
-```{r, echo=FALSE}
-p1 = df_encode |> ggplot(aes( x = CCI,col = IFHOS)) + geom_density()
-p2 = df_encode |> ggplot(aes( x = IFHOS, y = CCI,fill = IFHOS)) + geom_boxplot()
-
-combined_plot = subplot(style(ggplotly(p1), showlegend = TRUE),
-        style(ggplotly(p2), showlegend = FALSE),titleX=TRUE)
-layout(combined_plot, legend = list(orientation = 'h', x = 0.5, y = 1.2,
-                                    xanchor = 'center'))
-```
 
 ### SF-36
 
@@ -200,7 +197,6 @@ Given the eight subdomains SF-36 are likely to contribute to `PCS` and `MCS` sco
 
 ```{r, PCS & MCS, echo=FALSE}
 #SF_36 = c("PCS","MCS","PF","RE","RP","SF","VT", "GH" ,"MH","BP")
-
 p1 = df_encode |> ggplot(aes( x = PCS,col = IFHOS)) + geom_density()
 p2 = df_encode |> ggplot(aes( x = MCS,col = IFHOS)) + geom_density()
 combined_plot = subplot(style(ggplotly(p1), showlegend = TRUE),
@@ -241,6 +237,8 @@ layout(combined_plot, legend = list(orientation = 'h', x = 0.5, y = 1.2,
 
 ```
 ### WPACTIMP
+
+Activity impairment(`WPACTIMP`), percentage of impairment experienced in daily activities
 
 ```{r, WPACTIMP, echo=FALSE}
 p1 = ggplot(df_encode, aes(WPACTIMP, fill = factor(WPACTIMP),
@@ -434,8 +432,7 @@ Reasons why diagnosed patients might have a larger frequency of hospitalizations
 
 1. **Management of the diagnosed condition:** Patients with a diagnosis may require regular hospital visits for treatment or management of their condition.
 2. **Complications:** A diagnosed condition may lead to complications that necessitate frequent hospital stays.
-3. **Monitoring:** Some conditions might require close medical monitoring, possibly in a hospital setting.
-4. **Post-diagnosis care:** Initial hospitalizations might be more frequent as the care protocol is established immediately following diagnosis.
+
 
 
 # Q2.
@@ -446,11 +443,14 @@ Patients with Type 1 Diabetes tend to have better medication adherence scores co
 
 We exclusively considered patients with confirmed diagnoses. If we calculated the mean among the two group (a little violation of variable type given `MMAS` was treated as ordinal), excluding the missing values, we noticed that Type1 patients have a slightly smaller mean `MMAS` (Type1 = 2.53, Type2 = 2.54). The pie charts depict the distribution of various `MMAS` score categories, indicating a potentially marginal difference between the groups.
 
-
 We then employed a chi-square test to investigate potential disparities in the distribution of `MMAS` between individuals with Type1 and Type2 diabetes. With a significance level set at 0.05, the findings indicate no significant discrepancies in `MMAS` distribution among the two diabetic subgroups ($p value =0.5107$, more detail from the hidden trunk).
+
+Simply omitting missing values can lead to inaccuracies, particularly when computing the average `MMAS` scores across groups and employing chi-square test. Given that 13.6% of Type 2 diabetes patients have missing `MMAS` data, the exclusion of these values could significantly alter the calculated mean and median. Therefore, it is crucial to pursue additional measures to address this missing data, either by tracking down the missing information or applying appropriate imputation techniques to ensure a more reliable analysis.
 
 
 ```{r Q2 plot, echo=FALSE}
+df|> filter(DBTYPE == 1) |>group_by(MMAS) |>summarise(n())
+
 df_db = df |> filter(DBTYPE!="0" & MMAS != '-1') 
 df_db_group = df_db|> group_by(DBTYPE,MMAS) |> summarise( cnt =  n())
 
@@ -489,11 +489,14 @@ Specifically focusing on Type 1 diabetes patients, we constructed a negative bin
 ```{r, Q2 nb}
 nb_m2 <- MASS::glm.nb(RUHP6Q ~ factor(MMAS), data = df_db |> filter(DBTYPE == 1))
 summary(nb_m2)
+
+
+#nb_m3 <- MASS::glm.nb(RUHP6Q ~ MMAS, data = df_db |> filter(DBTYPE == 1)|>
+#                        mutate(MMAS = if_else(MMAS %in% c("3","4"),"2",MMAS)))
+#summary(nb_m3)
 ```
 
 ```{r model-summary-table, echo=FALSE, results='asis'}
-library(knitr)
-
 # Create a data frame with the model summary results
 model_summary <- data.frame(
   Term = c("(Intercept)", "MMAS_1", "MMAS_2", "MMAS_3", "MMAS_4"),
@@ -509,9 +512,11 @@ knitr::kable(model_summary, caption = "Negative Binomial Regression Model Summar
 
 The statement "higher levels of `MMAS` lead to lower rates of hospitalization" might seem counterintuitive, especially given the expectation that better medication adherence (lower `MMAS` scores) should lead to better health outcomes and, consequently, lower rates of hospitalization. However, several factors could explain this apparent contradiction:
 
-1.**Confounding Variables**: There might be confounding variables that are not accounted for in the analysis. These variables could influence both `MMAS` and hospitalization rates simultaneously, leading to a spurious association between `MMAS` and hospitalization.
+1.**Limited Sample Size on level 3 & 4**: The mere 20 data points available for Type 1 patients at levels 3 and 4 result in a high standard error, rendering the estimate less reliable. Additional data collection for these levels would enhance the robustness of the statistical analysis.
 
-2.**Reverse Causality**: It's possible that the relationship between `MMAS` and hospitalization is bidirectional. In other words, not only does medication adherence affect hospitalization rates, but hospitalization experiences could also influence future medication adherence. For example, individuals who have experienced frequent hospitalizations may become more vigilant about medication adherence, resulting in lower `MMAS` scores.
+2.**Confounding Variables**: There might be confounding variables that are not accounted for in the analysis. These variables could influence both `MMAS` and hospitalization rates simultaneously, leading to a spurious association between `MMAS` and hospitalization.
+
+3.**Reverse Causality**: It's possible that the relationship between `MMAS` and hospitalization is bidirectional. In other words, not only does medication adherence affect hospitalization rates, but hospitalization experiences could also influence future medication adherence. For example, individuals who have experienced frequent hospitalizations may become more vigilant about medication adherence, resulting in lower `MMAS` scores.
 
 
 # Q3.
