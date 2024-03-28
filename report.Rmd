@@ -449,7 +449,7 @@ Simply omitting missing values can lead to inaccuracies, particularly when compu
 
 
 ```{r Q2 plot, echo=FALSE}
-df|> filter(DBTYPE == 1) |>group_by(MMAS) |>summarise(n())
+#df|> filter(DBTYPE == 1) |>group_by(MMAS) |>summarise(n())
 
 df_db = df |> filter(DBTYPE!="0" & MMAS != '-1') 
 df_db_group = df_db|> group_by(DBTYPE,MMAS) |> summarise( cnt =  n())
